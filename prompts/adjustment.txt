@@ -1,7 +1,7 @@
 Make adjustments to the generated styles based on the findings:
 {{adjustments}}
 
-REQUREMENTS:
+REQUIREMENTS:
 - define css classes using existing selectors
 - do not modify the original html
 - use !important on all properties
