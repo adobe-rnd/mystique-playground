@@ -1,0 +1,10 @@
+INSTRUCTIONS:
+{{ instructions }}
+
+REQUIREMENTS:
+- define css classes using existing selectors
+- do not modify the original html
+- use !important on all properties
+
+INPUT:
+{{ input }}

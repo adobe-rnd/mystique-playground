@@ -1,0 +1,6 @@
+openai
+python-dotenv
+playwright
+nest-asyncio
+asyncio
+jinja2

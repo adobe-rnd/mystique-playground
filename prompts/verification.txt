@@ -1,0 +1,8 @@
+Based on the provided HTML and a screenshot, check the quality of the generated styles.
+Are they applied correctly? Are there any issues?
+Keep it concise and clear.
+Write a sentence or two for each improvement. Use markdown list format.
+Output should only include developer instructions.
+
+INPUT:
+{{html}}

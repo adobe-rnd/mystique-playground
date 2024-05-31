@@ -1,0 +1,20 @@
+Identify CSS style improvements from the provided HTML and screenshot, then list instructions for the developer.
+Keep each instruction concise and clear, and use markdown list format.
+Output should only include developer instructions.
+
+GOALS:
+{%- for goal in goals %}
+  - {{ goal }}
+{%- endfor %}
+
+EXAMPLES:
+- Adjust the font size of the article
+- Change the background color of the article
+- Modify the font family of the article
+- Change the color of the article text
+- Adjust the line height of the article
+- Modify the text alignment of the article
+- Change the text decoration of the article
+
+INPUT:
+{{html}}
