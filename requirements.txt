@@ -4,3 +4,6 @@ playwright
 nest-asyncio
 asyncio
 jinja2
+flask
+flask-cors
+aioflask

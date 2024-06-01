@@ -5,6 +5,7 @@ async def get_html_and_screenshot(url, selector):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
+        print(f"Getting HTML and screenshot of {url}...")
         await page.goto(url)
         await page.wait_for_load_state('networkidle')
 
