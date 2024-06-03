@@ -3,5 +3,5 @@
 node_modules/
 venv/
 dist/
-/db/
+*.db
 .env

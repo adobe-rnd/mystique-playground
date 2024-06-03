@@ -2,7 +2,7 @@ import sqlite3
 
 
 class JsCodeInjections:
-    def __init__(self, db_name="db/variations.db"):
+    def __init__(self, db_name="variations.db"):
         self.db_name = db_name
         self._create_table()
 
