@@ -2,7 +2,7 @@
 
 A playground and toolkit for the Mystique project.
 
-## Configuration
+## Setup
 
 1. Create a `.env` file in the root directory with the following content:
    ```shell
@@ -27,7 +27,7 @@ A playground and toolkit for the Mystique project.
     ./build.sh
     ```
 
-## Usage
+## Running the Application
 
 To start the application, run the following command:
 
@@ -35,7 +35,7 @@ To start the application, run the following command:
 ./start.sh https://main--wknd--hlxsites.hlx.page/
 ```
 
-## Contributing
+## Adding a New Generation Strategy
 
 To create a new generation strategy, follow these steps:
 
