@@ -5,10 +5,10 @@ from server.generation_strategies.base_strategy import AbstractGenerationStrateg
 
 class DefaultGenerationStrategy(AbstractGenerationStrategy):
     def id(self):
-        return "dummy"
+        return "example"
 
     def name(self):
-        return "Dummy Generation Strategy"
+        return "Example Strategy"
 
     async def generate(self, url, selector):
         self.send_progress(f"Fetching {url}...")

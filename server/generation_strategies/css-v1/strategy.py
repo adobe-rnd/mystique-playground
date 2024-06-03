@@ -12,7 +12,7 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
         return "css-v1"
 
     def name(self):
-        return "CSS Generation Strategy (v1)"
+        return "CSS Strategy (v1)"
 
     async def generate(self, url, selector):
 
