@@ -65,3 +65,6 @@ You can use the following methods from the base class to enhance your strategy:
 - **`add_css`**: To add CSS classes to the page.
 - **`add_javascript`**: To add JavaScript code to the page.
 
+#### Useful Utilities 
+
+To interact with the LLM, render pages, and capture screenshots, use the functions available in `llm.py` and `renderer.py`.
