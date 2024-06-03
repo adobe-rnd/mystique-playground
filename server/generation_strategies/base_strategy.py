@@ -39,8 +39,20 @@ class AbstractGenerationStrategy(ABC):
     async def generate(self, url, selector):
         pass
 
-    def add_javascript(self, javascript):
+    def run_javascript(self, javascript):
         self._javascript_injections.append(javascript)
+
+    def run_javascript_when_selector_available(self, selector, javascript):
+        self.run_javascript(f"""
+            const observer = new MutationObserver(mutations => {{
+                if (document.querySelector('{selector}')) {{
+                    {javascript}
+                    observer.disconnect();
+                    callback();
+                }}
+            }});
+            observer.observe(document.body, {{ childList: true, subtree: true }});
+        """)
 
     def add_css(self, css):
         self._css_injections.append(css)

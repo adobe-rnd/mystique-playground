@@ -55,14 +55,28 @@ class APIServer:
                 javascript_injections = strategy.get_javascript_injections()
                 css_injections = strategy.get_css_injections()
 
-                variation_id = self.injections.add_injection(f'''
-                    document.addEventListener('DOMContentLoaded', () => {{
-                        {"".join(javascript_injections)}
+                injections = []
+
+                if javascript_injections:
+                    injections.append("".join(javascript_injections))
+
+                if css_injections:
+                    injections.append(f'''
                         const style = document.createElement('style');
-                        style.innerHTML = `{"".join(css_injections)}`;
+                        style.innerHTML = `{''.join(css_injections)}`;
                         document.head.appendChild(style);
+                    ''')
+
+                if not injections:
+                    injections.append('console.log("No injections to add.");')
+
+                script_content = f'''
+                    document.addEventListener('DOMContentLoaded', () => {{
+                        {" ".join(injections)}
                     }});
-                ''')
+                '''
+
+                variation_id = self.injections.add_injection(script_content)
 
                 status_queue.put(StatusMessage(Action.DONE, variation_id))
 

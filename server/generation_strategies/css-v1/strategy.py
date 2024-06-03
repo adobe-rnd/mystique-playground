@@ -41,9 +41,6 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
         raw_output = get_text_and_image_completions(generation_prompt, image_data=original_screenshot)
         parsed_output = parse_markdown_output(raw_output)
 
-        print(raw_output)
-        print(parsed_output['css'])
-
         self.add_css('\n'.join(parsed_output['css']))
 
     def __init__(self):

@@ -63,7 +63,8 @@ You can use the following methods from the base class to enhance your strategy:
 
 - **`send_progress`**: To send a status update to the UI.
 - **`add_css`**: To add CSS classes to the page.
-- **`add_javascript`**: To add JavaScript code to the page.
+- **`run_javascript`**: To add JavaScript code to the page.
+- **`run_javascript_when_selector_available`**: To run JavaScript code when the selector is available.
 
 #### Useful Utilities 
 

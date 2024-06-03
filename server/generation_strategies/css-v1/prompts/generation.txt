@@ -3,6 +3,7 @@ INSTRUCTIONS:
 
 REQUIREMENTS:
 - return a list of css classes
+- use only default fonts
 - define css classes using existing selectors
 - do not modify the original html
 - use !important on all properties

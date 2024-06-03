@@ -80,16 +80,16 @@ export class MystiqueOverlay extends LitElement {
       width: 50%;
     }
 
+    sp-progress-circle[hidden] {
+      display: none;
+    }
+    
     .status {
       display: flex;
       flex-direction: row;
       align-items: center;
       gap: 10px;
       width: 100%;
-    }
-
-    .status[hidden] {
-      visibility: hidden;
     }
 
     .generation-controls {
@@ -110,7 +110,7 @@ export class MystiqueOverlay extends LitElement {
   @state() accessor selectedElement = null;
   
   @state() accessor busy = false;
-  @state() accessor statusMessage = 'Initializing...';
+  @state() accessor statusMessage = 'Ready!';
   
   async connectedCallback() {
     super.connectedCallback();
@@ -157,6 +157,7 @@ export class MystiqueOverlay extends LitElement {
       console.debug('Received message:', action, payload);
       switch (action) {
         case 'done':
+          this.statusMessage = 'Generated successfully!';
           this.busy = false;
           eventSource.close();
           window.open('http://localhost:4001?variationId=' + payload + '&cacheBuster=' + Date.now(), '_blank');
@@ -196,12 +197,8 @@ export class MystiqueOverlay extends LitElement {
               </div>
             </div>
             <div class="right-panel">
-              <div class="status" ?hidden=${!this.busy}>
-                <sp-progress-circle
-                        label="Generating..."
-                        indeterminate
-                        size="s">
-                </sp-progress-circle>
+              <div class="status">
+                <sp-progress-circle label="Generating..." indeterminate size="s" ?hidden=${!this.busy}></sp-progress-circle>
                 <div>${this.statusMessage}</div>
               </div>
               <div class="generation-controls">

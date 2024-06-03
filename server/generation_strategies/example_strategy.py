@@ -17,7 +17,7 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
         self.send_progress(f"Using selector {selector} to extract content...")
         await asyncio.sleep(1)
 
-        self.add_javascript("console.log('Hello from DummyGenerationStrategy!');")
+        self.run_javascript("console.log('Hello from DummyGenerationStrategy!');")
         self.add_css(f"{selector} {{ border: 10px solid red; }}")
 
         await asyncio.sleep(1)
