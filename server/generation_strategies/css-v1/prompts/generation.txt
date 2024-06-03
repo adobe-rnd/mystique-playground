@@ -2,6 +2,7 @@ INSTRUCTIONS:
 {{ instructions }}
 
 REQUIREMENTS:
+- return a list of css classes
 - define css classes using existing selectors
 - do not modify the original html
 - use !important on all properties

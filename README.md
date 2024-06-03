@@ -5,10 +5,10 @@ A playground and toolkit for the Mystique project.
 ## Configuration
 
 1. Create a `.env` file in the root directory with the following content:
-    ```shell
-    AZURE_OPENAI_API_KEY=...
-    AZURE_OPENAI_ENDPOINT=https://openai-west-us-tsaplin.openai.azure.com/
-    ```
+   ```shell
+   echo "AZURE_OPENAI_API_KEY=..." > .env
+   echo "AZURE_OPENAI_ENDPOINT=https://openai-west-us-tsaplin.openai.azure.com/" >> .env
+   ```
 
 1. Create and activate a virtual environment:
     ```shell

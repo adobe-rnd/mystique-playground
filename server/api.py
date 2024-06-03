@@ -48,21 +48,26 @@ class APIServer:
         strategy.set_status_queue(status_queue)
 
         async def _generate_async():
-            await strategy.generate(self.target_url, selector)
 
-            javascript_injections = strategy.get_javascript_injections()
-            css_injections = strategy.get_css_injections()
+            try:
+                await strategy.generate(self.target_url, selector)
 
-            variation_id = self.injections.add_injection(f'''
-                document.addEventListener('DOMContentLoaded', () => {{
-                    {"".join(javascript_injections)}
-                    const style = document.createElement('style');
-                    style.innerHTML = `{"".join(css_injections)}`;
-                    document.head.appendChild(style);
-                }});
-            ''')
+                javascript_injections = strategy.get_javascript_injections()
+                css_injections = strategy.get_css_injections()
 
-            status_queue.put(StatusMessage(Action.DONE, variation_id))
+                variation_id = self.injections.add_injection(f'''
+                    document.addEventListener('DOMContentLoaded', () => {{
+                        {"".join(javascript_injections)}
+                        const style = document.createElement('style');
+                        style.innerHTML = `{"".join(css_injections)}`;
+                        document.head.appendChild(style);
+                    }});
+                ''')
+
+                status_queue.put(StatusMessage(Action.DONE, variation_id))
+
+            except Exception as e:
+                status_queue.put(StatusMessage(Action.ERROR, str(e)))
 
         def _generate():
             asyncio.run(_generate_async())
