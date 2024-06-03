@@ -45,9 +45,6 @@ class AbstractGenerationStrategy(ABC):
     def add_css(self, css):
         self._css_injections.append(css)
 
-    def send_error(self, message):
-        self._status_queue.put(StatusMessage(Action.ERROR, message))
-
     def send_progress(self, message):
         self._status_queue.put(StatusMessage(Action.PROGRESS, message))
 
