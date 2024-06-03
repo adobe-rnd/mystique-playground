@@ -7,93 +7,11 @@ import '@spectrum-web-components/theme/src/themes.js';
 
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
+import '@spectrum-web-components/combobox/sp-combobox.js';
 
 import './main.css';
-
-async function resourceExists(url) {
-  try {
-    const response = await wretch(url).head().res();
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
-}
-
-function getCssSelector(element) {
-  if (element.id) {
-    return `#${element.id}`;
-  }
-  let selector = element.nodeName.toLowerCase();
-  if (element.className) {
-    selector += '.' + element.className.trim().replace(/\s+/g, '.');
-  }
-  let sib = element, nth = 1;
-  while (sib = sib.previousElementSibling) {
-    if (sib.nodeName.toLowerCase() === element.nodeName.toLowerCase()) {
-      nth++;
-    }
-  }
-  if (nth != 1) {
-    selector += `:nth-of-type(${nth})`;
-  }
-  return selector;
-}
-
-function selectElement() {
-  return new Promise((resolve) => {
-    function addHighlight(event) {
-      event.stopPropagation();
-      event.preventDefault();
-      const blockElement = event.target.closest('.block');
-      if (!blockElement || !blockElement.classList) {
-        return;
-      }
-      blockElement.classList.add('highlight');
-    }
-    
-    function removeHighlight(event) {
-      event.stopPropagation();
-      event.preventDefault();
-      const blockElement = event.target.closest('.block');
-      if (!blockElement || !blockElement.classList) {
-        return;
-      }
-      blockElement.classList.remove('highlight');
-    }
-    
-    function handleSelection(event) {
-      event.stopPropagation();
-      event.preventDefault();
-      const blockElement = event.target.closest('.block');
-      if (!blockElement) {
-        return;
-      }
-      removeEventListeners();
-      document.querySelector('.highlight')?.classList.remove('highlight');
-      resolve(blockElement);
-    }
-    
-    function cancelSelection(event) {
-      if (event.key === 'Escape') {
-        removeEventListeners();
-        document.querySelector('.highlight')?.classList.remove('highlight');
-        resolve(null);
-      }
-    }
-    
-    function removeEventListeners() {
-      document.removeEventListener('mouseover', addHighlight, true);
-      document.removeEventListener('mouseout', removeHighlight, true);
-      document.removeEventListener('click', handleSelection, true);
-      document.removeEventListener('keydown', cancelSelection, true);
-    }
-    
-    document.addEventListener('mouseover', addHighlight, true);
-    document.addEventListener('mouseout', removeHighlight, true);
-    document.addEventListener('click', handleSelection, true);
-    document.addEventListener('keydown', cancelSelection, true);
-  });
-}
+import {getCssSelector} from './utils';
+import {selectElement} from './selection';
 
 @customElement('mystique-overlay')
 export class MystiqueOverlay extends LitElement {
@@ -105,7 +23,7 @@ export class MystiqueOverlay extends LitElement {
       gap: 20px;
       align-items: end;
       transform: translate(-50%, 0);
-      width: 80%;
+      width: 50%;
       position: fixed;
       bottom: 25px;
       left: 50%;
@@ -116,6 +34,7 @@ export class MystiqueOverlay extends LitElement {
       border-radius: 5px;
       padding: 10px;
     }
+
     .left-panel {
       display: flex;
       flex-direction: column;
@@ -124,29 +43,34 @@ export class MystiqueOverlay extends LitElement {
       gap: 10px;
       width: 30%;
     }
+
     .selected-block {
       display: flex;
       flex-direction: row;
       flex-grow: 1;
       gap: 10px;
     }
+
     .selected-block div:nth-child(1) {
       display: inline;
       font-weight: bold;
     }
+
     .selected-block div:nth-child(2) {
       display: inline;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .buttons {
+
+    .selection-controls {
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: end;
       gap: 10px;
     }
+
     .right-panel {
       display: flex;
       flex-direction: column;
@@ -155,6 +79,7 @@ export class MystiqueOverlay extends LitElement {
       margin-left: 50px;
       width: 100%;
     }
+
     .status {
       display: flex;
       flex-direction: row;
@@ -162,34 +87,49 @@ export class MystiqueOverlay extends LitElement {
       gap: 10px;
       width: 70%;
     }
+
     .status[hidden] {
       visibility: hidden;
     }
-    .variations {
+
+    .generation-controls {
       display: flex;
       flex-direction: row;
+      align-items: center;
       gap: 10px;
+    }
+
+    .generation-controls sp-combobox {
+      width: 300px;
     }
   `;
 
+  @state() accessor strategies = [];
+  @state() accessor selectedStrategy = null;
+  
   @state() accessor selectedElement = null;
+  
   @state() accessor busy = false;
   @state() accessor statusMessage = 'Initializing...';
-  @state() accessor variations = [];
   
   async connectedCallback() {
     super.connectedCallback();
-    await this.updateVariations();
+    await this.fetchStrategies();
   }
   
-  async updateVariations() {
-    const existingVariationsPromises = [];
-    for (let i = 0; i < 10; i++) {
-      const url = `/generated/style${i}.css`;
-      existingVariationsPromises.push(resourceExists(url).then(exists => (exists ? url : null)));
+  async fetchStrategies() {
+    this.strategies = await wretch('http://localhost:4000/getStrategies').get().json();
+    if (this.strategies.length === 0) {
+      console.error('No strategies found.');
+      return;
     }
-    const existingVariationsResults = await Promise.all(existingVariationsPromises);
-    this.variations = existingVariationsResults.filter(url => url !== null);
+    console.debug('Strategies:', this.strategies);
+    this.selectedStrategy = this.strategies[0].name;
+  }
+  
+  selectStrategy(event) {
+    this.selectedStrategy = event.target.value;
+    console.debug('Selected strategy:', this.selectedStrategy);
   }
   
   async select() {
@@ -203,64 +143,42 @@ export class MystiqueOverlay extends LitElement {
   
   generate() {
     this.busy = true;
+
+    const selectedStrategyId = this.strategies.find(strategy => strategy.name === this.selectedStrategy).id;
     
-    const variationIndex = this.variations.length;
-    console.debug(`Generating variation ${variationIndex}...`);
-    
-    const originalUrl = 'https://main--wknd--hlxsites.hlx.live/';
-    const previewUrl = 'http://localhost:3000/';
-    const projectDir = '/Users/tsaplin/Work/Sources/mystique-wknd';
-    
-    const url = 'http://localhost:4000/generate'
-      + '?originalUrl=' + encodeURIComponent(originalUrl)
-      + '&previewUrl=' + encodeURIComponent(previewUrl)
-      + '&projectDir=' + encodeURIComponent(projectDir)
-      + '&selector=' + encodeURIComponent(getCssSelector(this.selectedElement))
-      + '&variationIndex=' + variationIndex;
+    const url = 'http://localhost:4000/generate' +
+      '?selector=' + encodeURIComponent(getCssSelector(this.selectedElement)) +
+      '&strategy=' + selectedStrategyId;
     
     const eventSource = new EventSource(url);
     
     eventSource.onmessage = async (event) => {
-      this.statusMessage = event.data;
-      if(event.data === 'Done.') {
-        await this.updateVariations();
-        this.busy = false;
-        eventSource.close();
+      const { action, payload } = JSON.parse(event.data);
+      console.debug('Received message:', action, payload);
+      switch (action) {
+        case 'done':
+          this.busy = false;
+          eventSource.close();
+          window.open('http://localhost:4001?variationId=' + payload, '_blank');
+          break;
+        case 'error':
+          console.error('Received message:', payload);
+          this.statusMessage = payload;
+          this.busy = false;
+          eventSource.close();
+          break;
+        case 'progress':
+          this.statusMessage = payload;
+          break;
+        default:
+          console.error('Unknown action:', action);
       }
-      console.debug('Received message:', event.data);
     };
+
     eventSource.onerror = (error) => {
       console.error('Stream connection failed:', error);
       eventSource.close();
     };
-  }
-  
-  async deleteAllStyles() {
-    this.busy = true;
-    this.statusMessage = 'Deleting all generated styles...';
-    const projectDir = '/Users/tsaplin/Work/Sources/mystique-wknd';
-    await wretch('http://localhost:4000/deleteGeneratedStyles?projectDir=' + encodeURIComponent(projectDir)).get().res();
-    await this.updateVariations();
-    this.statusMessage = 'All generated styles have been deleted.';
-    this.busy = false;
-  }
-  
-  toggleStyle(i) {
-    this.disableAllStyles();
-    const stylesheet = document.createElement('link');
-    stylesheet.id = `style${i}`;
-    stylesheet.rel = 'stylesheet';
-    stylesheet.href = `/generated/style${i}.css`;
-    document.head.appendChild(stylesheet);
-  }
-  
-  disableAllStyles() {
-    for (let i = 0; i < 10; i++) {
-      const stylesheet = document.getElementById(`style${i}`);
-      if (stylesheet) {
-        document.head.removeChild(stylesheet);
-      }
-    }
   }
   
   render() {
@@ -272,7 +190,7 @@ export class MystiqueOverlay extends LitElement {
                 <div>Selected block: </div>
                 <div>${this.selectedElement ? getCssSelector(this.selectedElement) : 'none'}</div>
               </div>
-              <div class="buttons">
+              <div class="selection-controls">
                 <sp-button variant="primary" @click=${() => this.select()} ?disabled=${!!this.selectedElement}>Select</sp-button>
                 <sp-button variant="primary" @click=${() => this.reset()} ?disabled=${!this.selectedElement}>Reset</sp-button>
               </div>
@@ -286,14 +204,13 @@ export class MystiqueOverlay extends LitElement {
                 </sp-progress-circle>
                 <div>${this.statusMessage}</div>
               </div>
-              <div class="variations">
-                <sp-button variant="primary" @click=${() => this.generate()} ?disabled=${!this.selectedElement || this.busy}>Generate</sp-button>
-                ${this.variations.map((url, i) => html`
-                  <sp-button variant="cta" @click=${() => this.toggleStyle(i)}>Variation ${i}</sp-button>
-                `)}
-                <sp-button variant="cta" @click=${() => this.disableAllStyles()}>Original</sp-button>
-                <sp-button variant="secondary" @click=${() => this.updateVariations()}>Refresh</sp-button>
-                <sp-button variant="negative" @click=${() => this.deleteAllStyles()} ?disabled=${this.busy}>Delete All</sp-button>
+              <div class="generation-controls">
+                <sp-button variant="primary" @click=${() => this.generate()} ?disabled=${!this.selectedElement || !this.selectedStrategy || this.busy}>Generate</sp-button>
+                <sp-combobox value=${this.selectedStrategy} @change=${this.selectStrategy}>
+                  ${this.strategies.map(strategy => html`
+                    <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
+                  `)}
+                </sp-picker>
               </div>
           </div>
         </sp-theme>

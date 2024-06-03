@@ -7,3 +7,5 @@ jinja2
 flask
 flask-cors
 aioflask
+requests
+bs4

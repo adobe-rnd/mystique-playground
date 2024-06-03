@@ -2,4 +2,6 @@
 .ipynb_checkpoints/
 node_modules/
 venv/
+dist/
+/db/
 .env

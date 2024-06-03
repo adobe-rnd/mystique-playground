@@ -1,2 +1,2 @@
 cd ui || exit
-npm start
+npm run build
