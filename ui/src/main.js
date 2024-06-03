@@ -30,7 +30,7 @@ export class MystiqueOverlay extends LitElement {
       z-index: 1000;
       background-color: rgba(255, 255, 255, 0.8);
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(0, 0, 0, 0.3);
       border-radius: 5px;
       padding: 10px;
     }
@@ -41,7 +41,7 @@ export class MystiqueOverlay extends LitElement {
       align-items: start;
       justify-content: end;
       gap: 10px;
-      width: 30%;
+      width: 50%;
     }
 
     .selected-block {
@@ -77,7 +77,7 @@ export class MystiqueOverlay extends LitElement {
       justify-content: end;
       gap: 10px;
       margin-left: 50px;
-      width: 100%;
+      width: 50%;
     }
 
     .status {
@@ -85,7 +85,7 @@ export class MystiqueOverlay extends LitElement {
       flex-direction: row;
       align-items: center;
       gap: 10px;
-      width: 70%;
+      width: 100%;
     }
 
     .status[hidden] {
@@ -159,7 +159,7 @@ export class MystiqueOverlay extends LitElement {
         case 'done':
           this.busy = false;
           eventSource.close();
-          window.open('http://localhost:4001?variationId=' + payload, '_blank');
+          window.open('http://localhost:4001?variationId=' + payload + '&cacheBuster=' + Date.now(), '_blank');
           break;
         case 'error':
           console.error('Received message:', payload);

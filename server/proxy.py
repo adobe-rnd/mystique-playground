@@ -1,7 +1,11 @@
+import os
+
 import requests
 from flask import Flask, request, Response
 
 from server.db import JsCodeInjections
+
+DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:4000/dashboard/index.js")
 
 
 class ProxyServer:
@@ -46,17 +50,17 @@ class ProxyServer:
                     content = content.replace(b'</head>', f'<script>{injection[1]}</script></head>'.encode('utf-8'))
             else:
                 print("Injecting dashboard script")
-                script = '''
+                script = f'''
                 <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const url = 'http://localhost:4000/dashboard/index.js';
+                document.addEventListener('DOMContentLoaded', () => {{
+                    const url = '{DASHBOARD_URL}';
                     const script = document.createElement('script');
                     script.src = url;
                     script.type = 'text/javascript';
                     script.async = true;
                     script.crossOrigin = 'anonymous';
                     document.head.appendChild(script);
-                });
+                }});
                 </script>
                 '''
                 content = content.replace(b'</head>', script.encode('utf-8') + b'</head>')

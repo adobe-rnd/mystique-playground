@@ -1,5 +1,6 @@
 import argparse
 import threading
+import time
 import webbrowser
 
 from server.api import APIServer
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     for thread in threads:
         thread.start()
 
-    webbrowser.open("http://localhost:4001/")
+    webbrowser.open(f"http://localhost:4001?cacheBuster={int(time.time())}")
 
     for thread in threads:
         thread.join()
