@@ -10,7 +10,7 @@ class WebScraper:
     def __init__(self, headless=True):
         self.headless = headless
 
-    async def get_html_and_screenshot(self, url, selector, with_styles=False, max_width=300, max_height=300):
+    async def get_html_and_screenshot(self, url, selector, with_styles=False, max_width=300, max_height=300, wait_time=0):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
 
@@ -18,6 +18,10 @@ class WebScraper:
 
             await page.goto(url)
             await page.wait_for_load_state('networkidle')
+
+            if wait_time > 0:
+                print(f"Waiting for {wait_time}ms...")
+                await page.wait_for_timeout(wait_time)
 
             screenshot_data = await page.locator(selector).first.screenshot()
             original_screenshot = Image.open(BytesIO(screenshot_data))
