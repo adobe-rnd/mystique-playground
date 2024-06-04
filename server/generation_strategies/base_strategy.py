@@ -27,6 +27,9 @@ class AbstractGenerationStrategy(ABC):
         self._javascript_injections = []
         self._css_injections = []
 
+    """
+    The unique identifier of the strategy.
+    """
     @abstractmethod
     def id(self):
         pass

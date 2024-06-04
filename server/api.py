@@ -1,3 +1,5 @@
+import traceback
+
 import asyncio
 import os
 
@@ -82,6 +84,8 @@ class APIServer:
 
             except Exception as e:
                 status_queue.put(StatusMessage(Action.ERROR, str(e)))
+                print(e)
+                print(traceback.format_exc())
 
         def _generate():
             asyncio.run(_generate_async())

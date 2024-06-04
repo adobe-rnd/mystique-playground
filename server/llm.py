@@ -1,6 +1,10 @@
 import base64
 import os
 import re
+from enum import Enum
+from io import BytesIO
+
+import requests
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 from jinja2 import Template
@@ -17,6 +21,61 @@ client = AzureOpenAI(
 )
 
 
+class ModelType(Enum):
+    GPT_4_OMNI = "gpt-4o"
+    GPT_4_VISION = "gpt-4v"
+    GPT_35_TURBO = "gpt-35-turbo"
+
+
+class LlmClient:
+    def __init__(self, model=ModelType.GPT_4_OMNI, system_prompt=None):
+        self.model = model
+        self.system_prompt = system_prompt
+
+    def get_completions(self, prompt, image_data_list=None):
+        messages = []
+
+        if self.system_prompt:
+            messages.append({
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": self.system_prompt,
+                    }
+                ],
+            })
+
+        user_message = {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": prompt,
+                }
+            ],
+        }
+        messages.append(user_message)
+
+        if image_data_list:
+            for image_data in image_data_list:
+                image_encoded_data = base64.b64encode(image_data).decode('utf-8')
+                user_message["content"].append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{image_encoded_data}"
+                        }
+                    }
+                )
+
+        response = client.chat.completions.create(
+            model=self.model.value,
+            messages=messages,
+        )
+        return response.choices[0].message.content
+
+
 def create_prompt_from_template(file_path, **kwargs):
     with open(file_path, 'r') as file:
         template_string = file.read()
@@ -27,41 +86,15 @@ def create_prompt_from_template(file_path, **kwargs):
     return rendered_template
 
 
-def load_image_and_convert_to_data_url(image_path):
-    with open(image_path, "rb") as image:
-        image_base64 = base64.b64encode(image.read()).decode("utf-8")
-    return f"data:image/png;base64,{image_base64}"
+def load_image(image_source):
+    if image_source.startswith('http://') or image_source.startswith('https://'):
+        response = requests.get(image_source)
+        image = BytesIO(response.content)
+    else:
+        with open(image_source, "rb") as image_file:
+            image = BytesIO(image_file.read())
 
-
-def get_text_and_image_completions(prompt, image_data = None):
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": prompt,
-                }
-            ],
-        },
-    ]
-
-    if image_data:
-        image_encoded_data = base64.b64encode(image_data).decode('utf-8')
-        messages[0]["content"].append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/png;base64,{image_encoded_data}"
-                }
-            }
-        )
-
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-    )
-    return response.choices[0].message.content
+    return image.read()
 
 
 def parse_markdown_output(output):

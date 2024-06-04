@@ -23,7 +23,7 @@ export class MystiqueOverlay extends LitElement {
       gap: 20px;
       align-items: end;
       transform: translate(-50%, 0);
-      width: 50%;
+      width: 70%;
       position: fixed;
       bottom: 25px;
       left: 50%;
@@ -41,7 +41,7 @@ export class MystiqueOverlay extends LitElement {
       align-items: start;
       justify-content: end;
       gap: 10px;
-      width: 50%;
+      width: 40%;
     }
 
     .selected-block {
@@ -77,7 +77,7 @@ export class MystiqueOverlay extends LitElement {
       justify-content: end;
       gap: 10px;
       margin-left: 50px;
-      width: 50%;
+      width: 60%;
     }
 
     sp-progress-circle[hidden] {
@@ -92,6 +92,11 @@ export class MystiqueOverlay extends LitElement {
       width: 100%;
     }
 
+    .status div:nth-child(1) {
+      display: inline;
+      font-weight: bold;
+    }
+    
     .generation-controls {
       display: flex;
       flex-direction: row;
@@ -157,14 +162,14 @@ export class MystiqueOverlay extends LitElement {
       console.debug('Received message:', action, payload);
       switch (action) {
         case 'done':
-          this.statusMessage = 'Generated successfully!';
+          this.statusMessage = 'Success!';
           this.busy = false;
           eventSource.close();
           window.open('http://localhost:4001?variationId=' + payload + '&cacheBuster=' + Date.now(), '_blank');
           break;
         case 'error':
           console.error('Received message:', payload);
-          this.statusMessage = payload;
+          this.statusMessage = 'Error: ' + payload;
           this.busy = false;
           eventSource.close();
           break;
@@ -198,6 +203,7 @@ export class MystiqueOverlay extends LitElement {
             </div>
             <div class="right-panel">
               <div class="status">
+                <div>Status:</div>
                 <sp-progress-circle label="Generating..." indeterminate size="s" ?hidden=${!this.busy}></sp-progress-circle>
                 <div>${this.statusMessage}</div>
               </div>

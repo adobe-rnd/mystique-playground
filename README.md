@@ -10,15 +10,21 @@ A playground and toolkit for the Mystique project.
    echo "AZURE_OPENAI_ENDPOINT=https://openai-west-us-tsaplin.openai.azure.com/" >> .env
    ```
 
-1. Create and activate a virtual environment:
+1. Create a virtual environment:
     ```shell
     python3 -m venv venv
     source venv/bin/activate
     ```
 
+1. Activate the virtual environment:
+   ```shell
+   source venv/bin/activate
+   ```
+
 1. Install the required packages:
     ```shell
     pip install -r requirements.txt
+    playwright install
     cd ui && npm install
     ```
 
@@ -68,4 +74,4 @@ You can use the following methods from the base class to enhance your strategy:
 
 #### Useful Utilities 
 
-To interact with the LLM, render pages, and capture screenshots, use the functions available in `llm.py` and `renderer.py`.
+To interact with the LLM, render pages, and capture screenshots, use the functions available in `llm.py` and `scraper.py`.

@@ -1,23 +1,24 @@
 import os
 
-import asyncio
-
 from server.generation_strategies.base_strategy import AbstractGenerationStrategy
-from server.llm import create_prompt_from_template, get_text_and_image_completions, parse_markdown_output
-from server.renderer import get_html_and_screenshot
+from server.llm import create_prompt_from_template, parse_markdown_output, LlmClient
+from server.scraper import WebScraper
 
 
 class DefaultGenerationStrategy(AbstractGenerationStrategy):
     def id(self):
-        return "css-v1"
+        return "generate-css"
 
     def name(self):
-        return "CSS Strategy (v1)"
+        return "Generate CSS"
 
     async def generate(self, url, selector):
 
+        scraper = WebScraper()
+        llm = LlmClient()
+
         self.send_progress('Getting the HTML and screenshot of the original page...')
-        original_html, original_screenshot = await get_html_and_screenshot(url, selector)
+        original_html, original_screenshot = await scraper.get_html_and_screenshot(url, selector)
 
         self.send_progress('Running the assessment...')
         goals = [
@@ -30,7 +31,7 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
             goals=goals,
             html=original_html.strip()
         )
-        instructions = get_text_and_image_completions(assessment_prompt, image_data=original_screenshot)
+        instructions = llm.get_completions(assessment_prompt, [original_screenshot])
 
         self.send_progress('Generating CSS variation...')
         generation_prompt = create_prompt_from_template(
@@ -38,7 +39,7 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
             instructions=instructions,
             html=original_html.strip()
         )
-        raw_output = get_text_and_image_completions(generation_prompt, image_data=original_screenshot)
+        raw_output = llm.get_completions(generation_prompt, [original_screenshot])
         parsed_output = parse_markdown_output(raw_output)
 
         self.add_css('\n'.join(parsed_output['css']))
