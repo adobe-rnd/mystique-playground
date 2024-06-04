@@ -25,7 +25,7 @@ class ProxyServer:
             return self.handle_request(path, variation_id)
 
     def handle_request(self, path, variation_id):
-        url = f"{self.site_name}/{path}"
+        url = f"{self.site_name.rstrip('/')}/{path.lstrip('/')}"
 
         print(f"Proxying request to {url}")
 
