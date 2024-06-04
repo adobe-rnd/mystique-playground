@@ -5,12 +5,12 @@ from server.llm import create_prompt_from_template, parse_markdown_output, LlmCl
 from server.scraper import WebScraper
 
 
-class DefaultGenerationStrategy(AbstractGenerationStrategy):
+class CssGenerationStrategy(AbstractGenerationStrategy):
     def id(self):
-        return "generate-css"
+        return "css-generation"
 
     def name(self):
-        return "Generate CSS"
+        return "CSS Generation"
 
     async def generate(self, url, selector):
 
@@ -18,7 +18,7 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
         llm = LlmClient()
 
         self.send_progress('Getting the HTML and screenshot of the original page...')
-        original_html, original_screenshot = await scraper.get_html_and_screenshot(url, selector)
+        original_html, original_screenshot = await scraper.get_html_and_screenshot(url, selector, with_styles=True)
 
         self.send_progress('Running the assessment...')
         goals = [

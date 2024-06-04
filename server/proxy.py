@@ -27,6 +27,8 @@ class ProxyServer:
     def handle_request(self, path, variation_id):
         url = f"{self.site_name}/{path}"
 
+        print(f"Proxying request to {url}")
+
         response = requests.request(
             method=request.method,
             url=url,
@@ -41,7 +43,7 @@ class ProxyServer:
 
         content = response.content
 
-        if path == "" and 'text/html' in response.headers.get('Content-Type', ''):
+        if 'text/html' in response.headers.get('Content-Type', ''):
             if variation_id is not None:
                 print(f"Injecting variation {variation_id}")
                 injection = self.injections.get_injection_by_id(variation_id)

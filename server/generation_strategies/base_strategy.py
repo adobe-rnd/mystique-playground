@@ -47,14 +47,30 @@ class AbstractGenerationStrategy(ABC):
 
     def run_javascript_when_selector_available(self, selector, javascript):
         self.run_javascript(f"""
-            const observer = new MutationObserver(mutations => {{
-                if (document.querySelector('{selector}')) {{
+            if (document.querySelector('{selector}')) {{    
+                setTimeout(() => {{
                     {javascript}
-                    observer.disconnect();
-                    callback();
-                }}
-            }});
-            observer.observe(document.body, {{ childList: true, subtree: true }});
+                }}, 100);
+                console.log('Selector found');
+            }} else {{
+                const observer = new MutationObserver(mutations => {{
+                    if (document.querySelector('{selector}')) {{
+                        setTimeout(() => {{
+                            {javascript}
+                        }}, 300);
+                        console.log('Selector found after mutation');
+                        observer.disconnect();
+                    }}
+                }});
+                observer.observe(document.body, {{ childList: true, subtree: true }});
+                console.log('Waiting for selector...');
+            }}
+        """)
+
+    def replace_html(self, selector, html):
+        self.run_javascript_when_selector_available(selector, f"""
+            document.querySelector('{selector}').innerHTML = `{html}`;
+            console.log('HTML replaced');
         """)
 
     def add_css(self, css):

@@ -5,7 +5,7 @@ class WebScraper:
     def __init__(self, headless=True):
         self.headless = headless
 
-    async def get_html_and_screenshot(self, url, selector):
+    async def get_html_and_screenshot(self, url, selector, with_styles=False):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
 
@@ -15,6 +15,12 @@ class WebScraper:
             await page.wait_for_load_state('networkidle')
 
             screenshot_data = await page.locator(selector).screenshot()
+
+            if not with_styles:
+                html = await page.locator(selector).inner_html()
+                await browser.close()
+
+                return html, screenshot_data
 
             html_with_styles = await page.evaluate('''(selector) => {
             

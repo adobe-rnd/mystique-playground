@@ -5,7 +5,7 @@ from server.generation_strategies.base_strategy import AbstractGenerationStrateg
 
 class DefaultGenerationStrategy(AbstractGenerationStrategy):
     def id(self):
-        return "example"
+        return "example-strategy"
 
     def name(self):
         return "Example Strategy"
