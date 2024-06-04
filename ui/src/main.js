@@ -138,7 +138,9 @@ export class MystiqueOverlay extends LitElement {
   }
   
   async select() {
+    this.style.display = 'none';
     this.selectedElement = await selectElement();
+    this.style.display = null;
     console.debug(getCssSelector(this.selectedElement));
   }
   

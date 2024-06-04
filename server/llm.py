@@ -4,7 +4,6 @@ import re
 from enum import Enum
 from io import BytesIO
 
-import requests
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 from jinja2 import Template
@@ -32,7 +31,7 @@ class LlmClient:
         self.model = model
         self.system_prompt = system_prompt
 
-    def get_completions(self, prompt, image_data_list=None):
+    def get_completions(self, prompt, image_list=None):
         messages = []
 
         if self.system_prompt:
@@ -57,9 +56,11 @@ class LlmClient:
         }
         messages.append(user_message)
 
-        if image_data_list:
-            for image_data in image_data_list:
-                image_encoded_data = base64.b64encode(image_data).decode('utf-8')
+        if image_list:
+            for image in image_list:
+                buffered = BytesIO()
+                image.save(buffered, format="PNG")
+                image_encoded_data = base64.b64encode(buffered.getvalue()).decode('utf-8')
                 user_message["content"].append(
                     {
                         "type": "image_url",
@@ -86,31 +87,21 @@ def create_prompt_from_template(file_path, **kwargs):
     return rendered_template
 
 
-def load_image(image_source):
-    if image_source.startswith('http://') or image_source.startswith('https://'):
-        response = requests.get(image_source)
-        image = BytesIO(response.content)
-    else:
-        with open(image_source, "rb") as image_file:
-            image = BytesIO(image_file.read())
-
-    return image.read()
-
-
-def parse_markdown_output(output):
+def parse_markdown_output(output, lang='html'):
     parsed_data = {}
 
-    # Regex pattern to match code snippets in Markdown
     code_snippet_pattern = re.compile(r'```(\w*)\n(.*?)```', re.DOTALL)
 
-    # Find all matches
     matches = code_snippet_pattern.findall(output)
 
-    # Iterate through matches and add them to the dictionary
     for lang, snippet in matches:
-        # If no language is specified, use 'plain'
         if not lang:
             lang = 'plain'
         parsed_data[lang] = parsed_data.get(lang, []) + [snippet.strip()]
 
-    return parsed_data
+    if lang in parsed_data:
+        return '\n'.join(parsed_data[lang])
+
+    return output
+
+

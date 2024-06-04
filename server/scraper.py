@@ -1,11 +1,16 @@
+from PIL import Image
+from io import BytesIO
+
 from playwright.async_api import async_playwright
+
+from server.image import downscale_image
 
 
 class WebScraper:
     def __init__(self, headless=True):
         self.headless = headless
 
-    async def get_html_and_screenshot(self, url, selector, with_styles=False):
+    async def get_html_and_screenshot(self, url, selector, with_styles=False, max_width=300, max_height=300):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
 
@@ -14,7 +19,9 @@ class WebScraper:
             await page.goto(url)
             await page.wait_for_load_state('networkidle')
 
-            screenshot_data = await page.locator(selector).screenshot()
+            screenshot_data = await page.locator(selector).first.screenshot()
+            original_screenshot = Image.open(BytesIO(screenshot_data))
+            screenshot = downscale_image(original_screenshot, max_width, max_height)
 
             if not with_styles:
                 html = await page.locator(selector).inner_html()
@@ -100,4 +107,4 @@ class WebScraper:
 
             await browser.close()
 
-            return html_with_styles, screenshot_data
+            return html_with_styles, screenshot

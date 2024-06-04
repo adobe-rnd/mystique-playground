@@ -1,6 +1,5 @@
-import asyncio
-
 from server.generation_strategies.base_strategy import AbstractGenerationStrategy
+from server.image import downscale_image
 from server.llm import LlmClient, ModelType, parse_markdown_output
 from server.scraper import WebScraper
 
@@ -53,15 +52,8 @@ class LayoutGenerationStrategy(AbstractGenerationStrategy):
         self.send_progress("Generating new layout...")
         llm_response = llm.get_completions(prompt, [screenshot])
 
-        parsed_response = parse_markdown_output(llm_response)
-
-        if 'html' in parsed_response:
-
-            new_html = '\n'.join(parsed_response['html'])
-            self.replace_html(selector, new_html)
-
-        else:
-            raise Exception("Error: No HTML in response")
+        new_html = parse_markdown_output(llm_response, lang='html')
+        self.replace_html(selector, new_html)
 
     def __init__(self):
         super().__init__()

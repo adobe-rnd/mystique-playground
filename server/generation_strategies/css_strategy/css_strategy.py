@@ -40,9 +40,9 @@ class CssGenerationStrategy(AbstractGenerationStrategy):
             html=original_html.strip()
         )
         raw_output = llm.get_completions(generation_prompt, [original_screenshot])
-        parsed_output = parse_markdown_output(raw_output)
+        generated_css = parse_markdown_output(raw_output, lang='css')
 
-        self.add_css('\n'.join(parsed_output['css']))
+        self.add_css(generated_css)
 
     def __init__(self):
         super().__init__()

@@ -24,7 +24,7 @@ class TranslationStrategy(AbstractGenerationStrategy):
             You must output the translated HTML only.
         """
 
-        llm = LlmClient(ModelType.GPT_35_TURBO, system_prompt=system_prompt)
+        llm = LlmClient(ModelType.GPT_4_OMNI, system_prompt=system_prompt)
 
         prompt = f"""
             Translate all text in the following HTML to French:
@@ -35,15 +35,9 @@ class TranslationStrategy(AbstractGenerationStrategy):
         self.send_progress("Translating HTML content...")
         llm_response = llm.get_completions(prompt)
 
-        parsed_response = parse_markdown_output(llm_response)
+        translated_html = parse_markdown_output(llm_response, lang='html')
 
-        if 'html' in parsed_response:
-
-            translated_html = '\n'.join(parsed_response['html'])
-            self.replace_html(selector, translated_html)
-
-        else:
-            raise Exception("Failed to translate HTML content.")
+        self.replace_html(selector, translated_html)
 
     def __init__(self):
         super().__init__()

@@ -8,4 +8,5 @@ flask
 flask-cors
 aioflask
 requests
+pillow
 bs4
