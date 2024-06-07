@@ -1,0 +1,10 @@
+Your main goal is to output all the provided CSS with your innovative changes.
+Additional Requirements:
+- Focus on elements that can drastically improve the design and add any new CSS variables but do not modify any existing CSS variables.
+- When choosing backgrounds, pay special attention to the brand's color scheme.
+- Try to honor the brand's color scheme as much as possible.
+- Do not modify the font family.
+---
+{{block_css}}
+---
+{{root_css_vars}}
