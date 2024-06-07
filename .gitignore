@@ -3,5 +3,9 @@
 node_modules/
 venv/
 dist/
+__pycache__/
 *.db
+*.png
+*.html
+*.css
 .env
