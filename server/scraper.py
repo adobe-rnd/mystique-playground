@@ -125,6 +125,7 @@ class WebScraper:
 
             if not with_styles:
                 html = await page.locator(selector).inner_html()
+                await browser.close()
 
                 return html, screenshot_data
 
