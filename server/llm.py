@@ -105,3 +105,8 @@ def parse_markdown_output(output, lang='html'):
     return output
 
 
+def parse_css(content):
+    pattern = re.compile(r'```css(.*?)```', re.DOTALL)
+    matches = pattern.findall(content)
+    css_blocks = [match.strip() for match in matches]
+    return css_blocks

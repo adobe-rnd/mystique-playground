@@ -22,9 +22,9 @@ class CssGenerationStrategy(AbstractGenerationStrategy):
 
         self.send_progress('Running the assessment...')
         goals = [
-            "Improve conversion rate",
+            "When choosing backgrounds, pay special attention to the brand's color scheme.",
             "Make the styles more consistent with the brand",
-            "Improve the overall look and feel of the form"
+            "Make bold, creative modifications that will significantly enhance the overall design and visual appeal of the website"
         ]
         assessment_prompt = create_prompt_from_template(
             os.path.dirname(__file__) + "/prompts/assessment.txt",
