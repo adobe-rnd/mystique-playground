@@ -14,7 +14,14 @@ class AKGenerationStrategy(AbstractGenerationStrategy):
 
     async def generate(self, url, selector):
         scraper = WebScraper()
-        llm = LlmClient(system_prompt="You are an expert UX designer known for creating stunning, high-impact web designs. Based on the provided CSS, CSS variables, HTML and screenshot of a webpage section (highlighted with red rectangle), make bold, creative modifications that will significantly enhance the overall design and visual appeal of the website.")
+
+        system_prompt = f"""
+            You are an expert UX designer known for creating stunning, high-impact web designs.
+            Based on the provided CSS, CSS variables, HTML and screenshot of a webpage section (highlighted with red 
+            rectangle), make bold, creative modifications that will significantly enhance the overall design and visual 
+            appeal of the website.
+        """
+        llm = LlmClient(system_prompt=system_prompt)
         self.send_progress('Getting the HTML, CSS and screenshot of the original page...')
         extracted_html = await scraper.get_block_html(url, selector)
 
