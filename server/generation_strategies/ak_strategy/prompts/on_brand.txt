@@ -4,6 +4,7 @@ Additional Requirements:
 - Add any new CSS variables and use them but do not modify any existing CSS variables.
 - When choosing backgrounds, pay special attention to the brand's color scheme.
 - Try to honor the brand's color scheme as much as possible.
+- Infer the design language of the webpage and make sure your changes are in line with the brand's style.
 - Do not modify the font family.
 - Use !important only on properties where you made changes.
 ---
