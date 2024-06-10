@@ -1,0 +1,24 @@
+Your task is to come up with brand guidelines from the provided image that will inform your ability to generate new CSS subsequently.
+Your main goal is to output all the provided CSS with your innovative changes.
+Additional Requirements:
+- Focus on elements that can drastically improve the design as well as create distinct looking design.
+- Focus on elements that can create distinct looking design.
+- Focus on elements that can drastically improve the design and add any new CSS variables but do not modify any existing CSS variables.
+- Focus on elements that can drastically change the layout to create distinct looking design.
+- Interpret the design language of the website and make sure your changes are in line with the brand's style.
+- You may change the layout if necessary to make the styles look distinctive.
+- When choosing backgrounds, pay special attention to the brand's color scheme.
+- Try to honor the brand's color scheme as much as possible.
+- Make sure the button or link text is legible and has a good contrast with the background on both normal and hover state.
+- When adding background color on a button or link, make sure to add a darker shade on hover state.
+- Do not modify the font family.
+- Do not use rounded corners if the brand uses sharp corners.
+- Use !important only on properties where you made changes.
+- Add subtle background gradients to make the design look more modern.
+- Center all the text.
+- Center all the buttons.
+- Add borders to the elements to make them stand out.
+---
+{{block_css}}
+---
+{{root_css_vars}}

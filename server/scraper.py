@@ -109,7 +109,6 @@ class WebScraper:
                                       wait_time=0):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
-
             page = await browser.new_page()
 
             await page.goto(url)
@@ -208,3 +207,20 @@ class WebScraper:
             await browser.close()
 
             return html_with_styles, screenshot
+
+    async def get_block_html(self, url, selector, wait_time=0):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            page = await browser.new_page()
+
+            await page.goto(url)
+            await page.wait_for_load_state('networkidle')
+
+            if wait_time > 0:
+                print(f"Waiting for {wait_time}ms...")
+                await page.wait_for_timeout(wait_time)
+
+            html = await page.locator(selector).inner_html()
+            await browser.close()
+
+            return html

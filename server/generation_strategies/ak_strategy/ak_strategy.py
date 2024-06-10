@@ -14,13 +14,13 @@ class AKGenerationStrategy(AbstractGenerationStrategy):
 
     async def generate(self, url, selector):
         scraper = WebScraper()
-        llm = LlmClient(system_prompt="You are an expert UX designer known for creating stunning, high-impact web designs. Based on the provided CSS, CSS variables and screenshot of a webpage section (highlighted with red rectangle), make bold, creative modifications that will significantly enhance the overall design and visual appeal of the website.")
-        self.send_progress('Getting the CSS and screenshot of the original page...')
-        # extracted_html, block_screenshot = await scraper.get_html_and_screenshot(url, selector, with_styles=False)
+        llm = LlmClient(system_prompt="You are an expert UX designer known for creating stunning, high-impact web designs. Based on the provided CSS, CSS variables, HTML and screenshot of a webpage section (highlighted with red rectangle), make bold, creative modifications that will significantly enhance the overall design and visual appeal of the website.")
+        self.send_progress('Getting the HTML, CSS and screenshot of the original page...')
+        extracted_html = await scraper.get_block_html(url, selector)
 
         # Save the extracted html
-        # with open('extracted_markup.html', 'w') as f:
-        #     f.write(extracted_html)
+        with open('extracted_markup.html', 'w') as f:
+            f.write(extracted_html)
 
         block_css, root_css_vars = await scraper.get_raw_css(url, selector)
         # full_page_screenshot = await scraper.get_full_page_screenshot(url)
@@ -29,20 +29,20 @@ class AKGenerationStrategy(AbstractGenerationStrategy):
         self.send_progress('Running the assessment...')
 
         master_prompt = create_prompt_from_template(
-            os.path.dirname(__file__) + "/prompts/on_brand.txt",
             # os.path.dirname(__file__) + "/prompts/off_brand.txt",
+            os.path.dirname(__file__) + "/prompts/on_brand.txt",
             block_css=block_css,
-            root_css_vars=root_css_vars
+            root_css_vars=root_css_vars,
+            extracted_html=extracted_html
         )
 
         self.send_progress('Generating CSS variation...')
 
         raw_output = llm.get_completions(master_prompt, [full_page_screenshot])
-        # generated_css = parse_markdown_output(raw_output, lang='css')
         generated_css = parse_css(raw_output)[0]
         # print(generated_css)
 
-        # save the generated css
+        # Save the generated css
         with open('generated_styles.css', 'w') as f:
             f.write(generated_css)
 
