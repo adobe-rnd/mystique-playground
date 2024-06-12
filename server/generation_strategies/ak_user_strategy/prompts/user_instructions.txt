@@ -1,6 +1,7 @@
 Your main goal is to {{user_prompt}}.
 Additional Requirements:
 - Output only the modified CSS.
+- If the goal is to hide something, it means setting visibility to hidden.
 - Do not modify other properties unrelated to the main goal.
 - Use !important on all the properties.
 ---
