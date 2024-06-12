@@ -119,8 +119,9 @@ class WebScraper:
                 await page.wait_for_timeout(wait_time)
 
             screenshot_data = await page.locator(selector).first.screenshot()
-            original_screenshot = Image.open(BytesIO(screenshot_data))
-            screenshot = downscale_image(original_screenshot, max_width, max_height)
+            screenshot = Image.open(BytesIO(screenshot_data))
+            screenshot.save('original_screenshot.png')
+            # screenshot = downscale_image(original_screenshot, max_width, max_height)
 
             if not with_styles:
                 html = await page.locator(selector).inner_html()
@@ -220,7 +221,10 @@ class WebScraper:
                 print(f"Waiting for {wait_time}ms...")
                 await page.wait_for_timeout(wait_time)
 
-            html = await page.locator(selector).inner_html()
+            # html = await page.locator(selector).inner_html()
+            # Select the element and get its outer HTML
+            html_element = await page.query_selector(selector)  # Replace 'selector' with your actual selector
+            outer_html = await html_element.evaluate('element => element.outerHTML')
             await browser.close()
 
-            return html
+            return outer_html

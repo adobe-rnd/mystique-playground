@@ -39,7 +39,7 @@ class AbstractGenerationStrategy(ABC):
         pass
 
     @abstractmethod
-    async def generate(self, url, selector):
+    async def generate(self, url, selector, user_prompt=None):
         pass
 
     def run_javascript(self, javascript):

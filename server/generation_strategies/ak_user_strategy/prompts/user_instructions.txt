@@ -1,0 +1,11 @@
+Your main goal is to {{user_prompt}}.
+Additional Requirements:
+- Output only the modified CSS.
+- Do not modify other properties unrelated to the main goal.
+- Use !important on all the properties.
+---
+{{block_css}}
+---
+{{root_css_vars}}
+---
+{{extracted_html}}

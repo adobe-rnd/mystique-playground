@@ -18,6 +18,11 @@ Additional Requirements:
 - Center all the text.
 - Center all the buttons.
 - Add borders to the elements to make them stand out.
+- The color of '#nav .menu-item' has to change to white or black to have good contrast with the background color of '#nav .nav-meganav'.
+- The hover and active state of '#nav .menu-item' with buttons should change to black.
+- The color of '#nav .collapsible::after' has to change to white or black to have good contrast with the background color of ''#nav .nav-meganav'.
+- The hover and active state of '#nav .collapsible::after' with buttons should change to black.
+- The color of '.home-page .panel-cards-container .default-content-wrapper h2' has to change to white or black to have good contrast with the background color of '.home-banner-bg'.
 ---
 {{block_css}}
 ---

@@ -8,6 +8,7 @@ import '@spectrum-web-components/theme/src/themes.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import '@spectrum-web-components/combobox/sp-combobox.js';
+import '@spectrum-web-components/textfield/sp-textfield.js';
 
 import './main.css';
 import {getCssSelector} from './utils';
@@ -111,12 +112,13 @@ export class MystiqueOverlay extends LitElement {
 
   @state() accessor strategies = [];
   @state() accessor selectedStrategy = null;
+  @state() accessor userPrompt = '';
   
   @state() accessor selectedElement = null;
   
   @state() accessor busy = false;
   @state() accessor statusMessage = 'Ready!';
-  
+
   async connectedCallback() {
     super.connectedCallback();
     await this.fetchStrategies();
@@ -143,6 +145,11 @@ export class MystiqueOverlay extends LitElement {
     this.style.display = null;
     console.debug(getCssSelector(this.selectedElement));
   }
+
+  handleInput(event) {
+    this.userPrompt = event.target.value;
+    console.debug('Prompt text:', this.userPrompt);
+  }
   
   reset() {
     this.selectedElement = null;
@@ -155,7 +162,8 @@ export class MystiqueOverlay extends LitElement {
     
     const url = 'http://localhost:4000/generate' +
       '?selector=' + encodeURIComponent(getCssSelector(this.selectedElement)) +
-      '&strategy=' + selectedStrategyId;
+      '&strategy=' + selectedStrategyId +
+      '&userPrompt=' + encodeURIComponent(this.userPrompt);
     
     const eventSource = new EventSource(url);
     
@@ -215,7 +223,10 @@ export class MystiqueOverlay extends LitElement {
                   ${this.strategies.map(strategy => html`
                     <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
                   `)}
-                </sp-picker>
+                </sp-combobox>
+                ${this.selectedStrategy === 'AK User Generation' ? html`
+                  <sp-textfield id="prompt-field" label="Prompt" placeholder="What would you like to do?" value=${this.userPrompt} @change=${this.handleInput}></sp-textfield>
+                ` : ''}
               </div>
           </div>
         </sp-theme>

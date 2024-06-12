@@ -34,6 +34,7 @@ class APIServer:
     def generate(self):
         selector = request.args.get('selector')
         generation_strategy = request.args.get('strategy')
+        user_prompt = request.args.get('userPrompt')
 
         print(f"Selector: {selector}")
         print(f"Generation strategy: {generation_strategy}")
@@ -52,7 +53,10 @@ class APIServer:
         async def _generate_async():
 
             try:
-                await strategy.generate(self.target_url, selector)
+                if user_prompt != '':
+                    await strategy.generate(self.target_url, selector, user_prompt)
+                else:
+                    await strategy.generate(self.target_url, selector)
 
                 javascript_injections = strategy.get_javascript_injections()
                 css_injections = strategy.get_css_injections()

@@ -1,0 +1,225 @@
+Your main goal is to utilize color theory and change the color theme of the webpage section by deeply analyzing the existing background colors.
+Additional Requirements:
+- Output only the modified CSS.
+- Adjust the background of 'home-banner-bg' to have a dark theme but follows the brand's color scheme.
+- The background of '.home-banner.image-hero' has to adjust the shade of its original color accordingly.
+- The background of 'home-banner-bg' and '.home-banner.image-hero' cannot be the same color.
+- The background of '#nav .nav-meganav' has to blend well with the background of 'home-banner-bg'.
+- The background of 'nav .nav-meganav' and '.home-banner.image-hero' cannot be the same color.
+- Feel free to use gradients for background color to make the design look more modern.
+- The color of '.home-page .panel-cards-container .default-content-wrapper h2' has to change to white or black to have good contrast with the background color of '.home-banner-bg'.
+- When choosing backgrounds, pay special attention to the brand's color scheme.
+- Add any new CSS variables and use them but do not modify any existing CSS variables.
+- Do not modify other properties unrelated to the main goal.
+- Do not add any hover effects.
+- Use !important on all the properties.
+---
+{{header_css}}
+---
+{{block_css}}
+---
+main .section {
+  margin-bottom: 2rem;
+}
+
+main .section:is(.home-banner-container) {
+  margin-bottom: -1.5rem;
+}
+
+main .section:is(.panel-cards-container) {
+  margin-bottom: 1.5rem;
+}
+
+main .section:is(.columns-container) {
+  margin-bottom: -3rem;
+}
+
+main a:hover {
+  background-color: var(--link-color) !important;
+}
+
+.section .default-content-wrapper h2 {
+  font-size: 2rem;
+}
+
+.home-banner-bg {
+  background-color: #EBE8FC;
+  margin-bottom: 5rem;
+}
+
+.home-banner-bg::after {
+  content: "";
+  width: 100%;
+  height: 10rem;
+  margin-top: -80px;
+  position: absolute;
+  left: 0;
+  background: url("../../icons/home-bg-desktop.svg") center / 100% 100%;
+}
+
+/* pre footer */
+
+.columns-container h2 {
+  margin-top: 25px;
+  margin-bottom: 50px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.pre-footer .columns-img-col img {
+  border-radius: 3rem;
+}
+
+.pre-footer a {
+  border-radius: 0.5rem !important;
+  font-weight: normal !important;
+  margin: auto !important;
+}
+
+.pre-footer > div {
+  margin-bottom: 3rem;
+}
+
+.pre-footer > div > div {
+  display: flex;
+  align-items: start;
+  gap: 1rem;
+}
+
+.pre-footer > div:first-child > div img {
+  max-width: none;
+}
+
+/* insurance form */
+
+.section.search-container h2 {
+  position: relative;
+  margin: auto 5rem;
+  width: 60%;
+  color: inherit;
+  font-size: 2.5rem;
+  font-weight: bolder;
+}
+
+.insurance-search .search-box-wrapper {
+  margin-bottom: 0;
+}
+
+.insurance-search .search-input {
+  box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.24);
+}
+
+.home-page .insurance-search .search-button {
+  font-size: 1rem;
+  text-transform: none;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row-reverse;
+  gap: 1rem;
+  background-color: var(--link-color);
+}
+
+.insurance-search .search-button::before {
+  display: inline-block;
+  content: "";
+  height: 13px;
+  width: 29px;
+  background: var(--text-color-inverted);
+  /* stylelint-disable-next-line property-no-vendor-prefix */
+  -webkit-mask: url("../../icons/arrow.svg") no-repeat center center;
+  mask: url("../../icons/arrow.svg") no-repeat center center;
+}
+
+.error-state {
+  border: 2px solid var(--error-message-color) !important;
+}
+
+.error-spacing {
+  gap: 40px;
+}
+
+.error-state::placeholder {
+  color: var(--error-message-color);
+}
+
+.find-useful-wrapper {
+  display: none;
+}
+
+.find-useful-wrapper .error {
+  display: flex;
+  justify-content: center;
+  margin-left: -250px;
+}
+
+.find-useful-wrapper .error > div > div {
+  display: flex;
+  align-items: center;
+  width: auto;
+  padding: 8px 16px;
+  color: var(--error-message-color);
+  background-color: var(--error-message-bg-color);
+}
+
+.find-useful-wrapper .error > div > div::before {
+  display: inline-block;
+  content: "";
+  margin-right: 0.5rem;
+  height: 22px;
+  width: 22px;
+  background: var(--error-message-color);
+  /* stylelint-disable-next-line property-no-vendor-prefix */
+  -webkit-mask: url("../../icons/alert.svg") no-repeat center center;
+  mask: url("../../icons/alert.svg") no-repeat center center;
+  vertical-align: middle;
+}
+
+.home-page .panel-cards-container .default-content-wrapper h2 {
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .home-banner-bg {
+    margin-bottom: 6rem !important;
+  }
+
+  .home-banner-bg::after {
+    background: url("../../icons/home-bg-mobile.svg") center / 100% 100%;
+  }
+
+  .columns-container {
+    margin-top: -2rem;
+  }
+
+  .pre-footer > div > div:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .pre-footer .button-container {
+    align-self: center;
+  }
+
+  .pre-footer > div {
+    margin-bottom: 0;
+  }
+
+  .section.search-container h2 {
+    margin: auto;
+    width: 100%;
+    font-size: 2rem;
+    font-weight: bolder;
+  }
+
+  .insurance-search .search-input {
+    border: 1px solid #000 !important;
+  }
+}
+---
+{{root_css_vars}}
+---
+{{header_html}}
+---
+{{extracted_html}}

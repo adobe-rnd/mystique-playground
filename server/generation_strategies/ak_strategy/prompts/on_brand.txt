@@ -6,6 +6,8 @@ Additional Requirements:
 - Try to honor the brand's color scheme as much as possible.
 - Infer the design language of the webpage and make sure your changes are in line with the brand's style.
 - Do not modify the font family.
+- Do not modify the font size of the text content.
+- Do not introduce additional text formatting.
 - Use !important on all the properties.
 ---
 {{block_css}}

@@ -12,15 +12,16 @@ class LayoutGenerationStrategy(AbstractGenerationStrategy):
         return "Layout Generation"
 
     async def generate(self, url, selector):
+        section_selector = 'div.section.columns-container'
         scraper = WebScraper()
 
         self.send_progress(f"Fetching HTML content from {url}...")
         html, screenshot = await scraper.get_html_and_screenshot(url, selector, with_styles=True)
 
         system_prompt = f"""
-            You are a professional web designer.
-            You are tasked with improving the layout of the following HTML content.
-            You must generate a new layout that looks different from the original.
+            You are an expert UX designer known for creating stunning, high-impact web designs.
+            Based on the provided HTML and screenshot of a webpage section, make bold, creative modifications that will 
+            significantly enhance the overall design and visual appeal of the website.
             You must think in steps.
         """
 
@@ -28,10 +29,10 @@ class LayoutGenerationStrategy(AbstractGenerationStrategy):
 
         analysis_prompt = f"""
             Analyze the following HTML content and identify the type of layout it uses.
-            Propose a new layout that is different from the original.
+            Propose a new layout to create a distinct looking design.
             Write down the changes you would make to the layout to make it look different.
             Do not output any code.
-            
+            ---
             {html}
         """
 
@@ -41,11 +42,11 @@ class LayoutGenerationStrategy(AbstractGenerationStrategy):
         prompt = f"""
             You must output the modified HTML only.
             You must use only style attributes to modify the layout.
-
+            ---
             {proposed_changes}
-
+            ---
             Generate a new layout for the following HTML content.
-
+            ---
             {html}
         """
 
