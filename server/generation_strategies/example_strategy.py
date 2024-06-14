@@ -1,6 +1,6 @@
 import asyncio
 
-from server.generation_strategies.base_strategy import AbstractGenerationStrategy
+from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCapability
 
 
 class DefaultGenerationStrategy(AbstractGenerationStrategy):
@@ -9,6 +9,9 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
 
     def name(self):
         return "Example Strategy"
+
+    def capabilities(self):
+        return [StrategyCapability.GENERATOR]
 
     async def generate(self, url, selector):
         self.send_progress(f"Fetching {url}...")

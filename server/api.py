@@ -39,7 +39,7 @@ class APIServer:
         print(f"Generation strategy: {generation_strategy}")
 
         try:
-            strategy_cls = next(filter(lambda s: s[0] == generation_strategy, self.generation_strategies))[2]
+            strategy_cls = next(filter(lambda s: s[0] == generation_strategy, self.generation_strategies))[3]
         except StopIteration:
             raise ValueError(f"Generation strategy with ID {generation_strategy} not found in the list.")
 
@@ -105,8 +105,8 @@ class APIServer:
 
     def get_generation_strategies(self):
         return [
-            {"id": id, "name": name}
-            for id, name, _ in self.generation_strategies
+            {"id": id, "name": name, "capabilities": [c.value for c in capabilities]}
+            for id, name, capabilities, _ in self.generation_strategies
         ]
 
     def dashboard(self, filename):

@@ -1,4 +1,4 @@
-from server.generation_strategies.base_strategy import AbstractGenerationStrategy
+from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCapability
 from server.image import downscale_image
 from server.llm import LlmClient, ModelType, parse_markdown_output
 from server.scraper import WebScraper
@@ -10,6 +10,9 @@ class LayoutGenerationStrategy(AbstractGenerationStrategy):
 
     def name(self):
         return "Layout Generation"
+
+    def capabilities(self):
+        return [StrategyCapability.GENERATOR]
 
     async def generate(self, url, selector):
         scraper = WebScraper()

@@ -15,7 +15,7 @@ import {selectElement} from './selection';
 
 @customElement('mystique-overlay')
 export class MystiqueOverlay extends LitElement {
-
+  
   static styles = css`
     .container {
       display: flex;
@@ -49,15 +49,18 @@ export class MystiqueOverlay extends LitElement {
       flex-direction: row;
       flex-grow: 1;
       gap: 10px;
+      width: 100%;
+      overflow: hidden;
     }
 
     .selected-block div:nth-child(1) {
       display: inline;
       font-weight: bold;
+      flex-shrink: 0;
     }
 
     .selected-block div:nth-child(2) {
-      display: inline;
+      display: inline-block;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -83,7 +86,7 @@ export class MystiqueOverlay extends LitElement {
     sp-progress-circle[hidden] {
       display: none;
     }
-    
+
     .status {
       display: flex;
       flex-direction: row;
@@ -95,8 +98,17 @@ export class MystiqueOverlay extends LitElement {
     .status div:nth-child(1) {
       display: inline;
       font-weight: bold;
+      flex-shrink: 0;
     }
-    
+
+    .status .status-message {
+      display: inline-block;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 70%;
+      text-overflow: ellipsis;
+    }
+
     .generation-controls {
       display: flex;
       flex-direction: row;
@@ -207,7 +219,7 @@ export class MystiqueOverlay extends LitElement {
               <div class="status">
                 <div>Status:</div>
                 <sp-progress-circle label="Generating..." indeterminate size="s" ?hidden=${!this.busy}></sp-progress-circle>
-                <div>${this.statusMessage}</div>
+                <div class="status-message">${this.statusMessage}</div>
               </div>
               <div class="generation-controls">
                 <sp-button variant="primary" @click=${() => this.generate()} ?disabled=${!this.selectedElement || !this.selectedStrategy || this.busy}>Generate</sp-button>

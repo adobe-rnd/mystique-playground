@@ -1,6 +1,6 @@
 import asyncio
 
-from server.generation_strategies.base_strategy import AbstractGenerationStrategy
+from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCapability
 from server.llm import LlmClient, ModelType, parse_markdown_output
 from server.scraper import WebScraper
 
@@ -11,6 +11,9 @@ class TranslationStrategy(AbstractGenerationStrategy):
 
     def name(self):
         return "Content Translation"
+
+    def capabilities(self):
+        return [StrategyCapability.GENERATOR]
 
     async def generate(self, url, selector):
         scraper = WebScraper()

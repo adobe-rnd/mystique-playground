@@ -1,3 +1,6 @@
+import '@webcomponents/custom-elements';
+import 'lit/polyfill-support.js';
+
 import './main.js'
 
 function createOverlay() {

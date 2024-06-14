@@ -3,6 +3,11 @@ from enum import Enum
 import json
 
 
+class StrategyCapability(Enum):
+    GENERATOR = 'generator'
+    ASSISTANT = 'assistant'
+
+
 class Action(Enum):
     PROGRESS = 'progress'
     ERROR = 'error'
@@ -39,6 +44,10 @@ class AbstractGenerationStrategy(ABC):
         pass
 
     @abstractmethod
+    def capabilities(self):
+        return [StrategyCapability.GENERATOR]
+
+    @abstractmethod
     async def generate(self, url, selector):
         pass
 
@@ -50,14 +59,14 @@ class AbstractGenerationStrategy(ABC):
             if (document.querySelector('{selector}')) {{    
                 setTimeout(() => {{
                     {javascript}
-                }}, 100);
+                }}, 3000);
                 console.log('Selector found');
             }} else {{
                 const observer = new MutationObserver(mutations => {{
                     if (document.querySelector('{selector}')) {{
                         setTimeout(() => {{
                             {javascript}
-                        }}, 300);
+                        }}, 3000);
                         console.log('Selector found after mutation');
                         observer.disconnect();
                     }}

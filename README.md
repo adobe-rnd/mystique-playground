@@ -23,6 +23,7 @@ A playground and toolkit for the Mystique project.
 
 1. Install the required packages:
     ```shell
+    source venv/bin/activate
     pip install -r requirements.txt
     playwright install
     cd ui && npm install

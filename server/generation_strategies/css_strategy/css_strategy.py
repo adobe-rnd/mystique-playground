@@ -1,6 +1,6 @@
 import os
 
-from server.generation_strategies.base_strategy import AbstractGenerationStrategy
+from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCapability
 from server.llm import create_prompt_from_template, parse_markdown_output, LlmClient
 from server.scraper import WebScraper
 
@@ -11,6 +11,9 @@ class CssGenerationStrategy(AbstractGenerationStrategy):
 
     def name(self):
         return "CSS Generation"
+
+    def capabilities(self):
+        return [StrategyCapability.GENERATOR]
 
     async def generate(self, url, selector):
 
