@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "Starting server..."
 source venv/bin/activate
 
@@ -16,8 +18,12 @@ trap cleanup SIGINT
 ( cd ui && npm start ) &
 WEBPACK_PID=$!
 
-# Start Python server
-DASHBOARD_URL=http://localhost:4010/index.js python -m server.server --url $1 &
+# Start Python server with or without the --url parameter
+if [ -z "$1" ]; then
+    python -m server.server &
+else
+    python -m server.server --url "$1" &
+fi
 PYTHON_PID=$!
 
 # Wait for both background processes to complete

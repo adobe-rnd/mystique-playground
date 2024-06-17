@@ -17,8 +17,8 @@ module.exports = {
   mode: 'development',
   devtool: 'source-map',
   entry: {
-    index: './src/index.js',
-    background: './src/background.js'
+    toolbox: './src/toolbox_app.js',
+    assistant: './src/assistant_app.js',
   },
   output: {
     filename: '[name].js',

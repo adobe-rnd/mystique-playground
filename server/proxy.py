@@ -5,8 +5,7 @@ from flask import Flask, request, Response
 
 from server.db import JsCodeInjections
 
-DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:4000/dashboard/index.js")
-
+DASHBOARD_URL = "http://localhost:4010/toolbox.js"
 
 class ProxyServer:
     def __init__(self, target_url):

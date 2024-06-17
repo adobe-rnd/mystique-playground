@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Mystique Toolbox",
+  "name": "Mystique GenAI Assistant",
   "version": "0.1",
-  "description": "Mystique",
+  "description": "Mystique GenAI Assistant",
   "permissions": ["activeTab", "scripting"],
   "background": {
-    "service_worker": "dist/background.js"
+    "service_worker": "./background.js"
   },
   "action": {
     "default_icon": "icon.png"

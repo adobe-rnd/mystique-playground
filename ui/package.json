@@ -11,10 +11,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@adobe/lit-mobx": "^2.2.2",
     "@lit/task": "1.0.0",
     "@spectrum-web-components/bundle": "^0.42.4",
+    "@spectrum-web-components/icons-ui": "^0.43.0",
+    "@spectrum-web-components/icons-workflow": "^0.43.0",
     "@webcomponents/custom-elements": "^1.6.0",
+    "html2canvas": "^1.4.1",
     "lit": "3.1.2",
+    "localforage": "^1.10.0",
+    "lodash": "^4.17.21",
+    "mobx": "^6.12.4",
+    "polygon-clipping": "^0.15.7",
     "wretch": "2.8.1"
   },
   "devDependencies": {

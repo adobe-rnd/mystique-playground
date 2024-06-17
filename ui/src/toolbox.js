@@ -9,7 +9,7 @@ import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import '@spectrum-web-components/combobox/sp-combobox.js';
 
-import './main.css';
+import './toolbox.css';
 import {getCssSelector} from './utils';
 import {selectElement} from './selection';
 
@@ -166,7 +166,8 @@ export class MystiqueOverlay extends LitElement {
     const selectedStrategyId = this.strategies.find(strategy => strategy.name === this.selectedStrategy).id;
     
     const url = 'http://localhost:4000/generate' +
-      '?selector=' + encodeURIComponent(getCssSelector(this.selectedElement)) +
+      '?url=' + encodeURIComponent(window.location.href) +
+      '&selector=' + encodeURIComponent(getCssSelector(this.selectedElement)) +
       '&strategy=' + selectedStrategyId;
     
     const eventSource = new EventSource(url);

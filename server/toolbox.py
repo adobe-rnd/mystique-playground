@@ -11,13 +11,13 @@ from flask_cors import CORS
 
 from server.db import JsCodeInjections
 from server.generation_strategies.base_strategy import Action, StatusMessage
+from server.llm import LlmClient, ModelType, parse_markdown_output
 from server.strategy_loader import load_generation_strategies
 
 
-class APIServer:
-    def __init__(self, target_url):
-        self.target_url = target_url
-
+class ToolboxServer:
+    def __init__(self, url):
+        self.url = url
         self.generation_strategies = load_generation_strategies()
 
         self.app = Flask(__name__)
@@ -27,7 +27,6 @@ class APIServer:
         self.injections = JsCodeInjections()
 
     def _register_routes(self):
-        self.app.add_url_rule('/dashboard/<path:filename>', view_func=self.dashboard)
         self.app.add_url_rule('/generate', view_func=self.generate)
         self.app.add_url_rule('/getStrategies', view_func=self.get_generation_strategies)
 
@@ -52,7 +51,7 @@ class APIServer:
         async def _generate_async():
 
             try:
-                await strategy.generate(self.target_url, selector)
+                await strategy.generate(self.url, selector)
 
                 javascript_injections = strategy.get_javascript_injections()
                 css_injections = strategy.get_css_injections()
@@ -108,10 +107,6 @@ class APIServer:
             {"id": id, "name": name, "capabilities": [c.value for c in capabilities]}
             for id, name, capabilities, _ in self.generation_strategies
         ]
-
-    def dashboard(self, filename):
-        static_files_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ui', 'dist'))
-        return send_from_directory(static_files_path, filename)
 
     def run(self, host="0.0.0.0", port=4000):
         self.app.run(host=host, port=port)

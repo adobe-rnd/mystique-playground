@@ -29,17 +29,18 @@ A playground and toolkit for the Mystique project.
     cd ui && npm install
     ```
 
-1. Build the dashboard overlay:
-    ```shell
-    ./build.sh
-    ```
-
 ## Running the Application
 
-To start the application, run the following command:
+To start the proxy server and the UI, run the following command:
 
 ```shell
 ./start.sh https://main--wknd--hlxsites.hlx.page/
+```
+
+Alternatively, to use the Chrome extension or Sidekick, run the following command:
+
+```shell
+./start.sh
 ```
 
 ## Adding a New Generation Strategy
