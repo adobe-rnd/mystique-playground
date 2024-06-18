@@ -228,7 +228,7 @@ export class MystiqueOverlay extends LitElement {
                   ${this.strategies.map(strategy => html`
                     <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
                   `)}
-                </sp-picker>
+                </sp-combobox>
               </div>
           </div>
         </sp-theme>
