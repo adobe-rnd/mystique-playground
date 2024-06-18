@@ -29,6 +29,11 @@ A playground and toolkit for the Mystique project.
     cd ui && npm install
     ```
 
+1. Install the Chrome extension (optional):
+    - Open the Extension Management page by navigating to `chrome://extensions`.
+    - Enable Developer Mode by clicking the toggle switch next to Developer mode.
+    - Click the Load unpacked button and select the `ui` folder.
+
 ## Running the Application
 
 To start the proxy server and the UI, run the following command:
