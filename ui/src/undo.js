@@ -2,8 +2,9 @@ import { observable, action, computed } from 'mobx';
 import { authoringSession } from './session';
 
 class UndoEntry {
-  constructor(undo, prompt, selectedRegions) {
+  constructor(undo, apply, prompt, selectedRegions) {
     this.undo = undo;
+    this.apply = apply;
     this.prompt = prompt;
     this.selectedRegions = selectedRegions;
   }
@@ -12,9 +13,9 @@ class UndoEntry {
 class UndoManager {
   @observable accessor entries = [];
   
-  @action addEntry(undoCode, prompt, selectedRegions) {
+  @action addEntry(undoCode, applyCode, prompt, selectedRegions) {
     console.log(`[B] Adding entry, Can Undo: ${this.canUndo}`);
-    this.entries.push(new UndoEntry(undoCode, prompt, selectedRegions));
+    this.entries.push(new UndoEntry(undoCode, applyCode, prompt, selectedRegions));
     console.log(`[A] Adding entry, Can Undo: ${this.canUndo}`);
   }
   
@@ -41,6 +42,10 @@ class UndoManager {
     } catch (error) {
       console.error('Error executing code:', error);
     }
+  }
+  
+  getFullApplyCode() {
+    return this.entries.map(entry => entry.apply).join('\n');
   }
 }
 

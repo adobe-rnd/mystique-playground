@@ -114,7 +114,7 @@ export class DrawingCanvas extends MobxLitElement {
     this.redraw(intersectedElements, enclosingElement);
   }
   
-  redraw(intersectedElements = [], enclosingElement = null) {
+  redraw(selectedElements = [], enclosingElement = null) {
     const canvas = this.canvasRef.value;
     const context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -146,7 +146,7 @@ export class DrawingCanvas extends MobxLitElement {
     
     if (appSettings.isDisplayingDebuggingInfo) {
       // Highlight intersected elements
-      this.highlightIntersectedElements(context, intersectedElements);
+      this.highlightSelectedElements(context, selectedElements);
       
       // Draw enclosing rectangle
       this.drawEnclosingRectangle(context, enclosingElement);
@@ -182,7 +182,7 @@ export class DrawingCanvas extends MobxLitElement {
     this.currentPath = [];
   }
   
-  highlightIntersectedElements(context, elements) {
+  highlightSelectedElements(context, elements) {
     elements.forEach(element => {
       const rect = element.getBoundingClientRect();
       const canvasRect = this.canvasRef.value.getBoundingClientRect();

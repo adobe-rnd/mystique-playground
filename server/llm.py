@@ -31,7 +31,7 @@ class LlmClient:
         self.model = model
         self.system_prompt = system_prompt
 
-    def get_completions(self, prompt, image_list=None):
+    def get_completions(self, prompt, image_list=None, max_tokens=4096, temperature=1.0, json_output=False):
         messages = []
 
         if self.system_prompt:
@@ -70,10 +70,23 @@ class LlmClient:
                     }
                 )
 
-        response = client.chat.completions.create(
-            model=self.model.value,
-            messages=messages,
-        )
+        request_params = {
+            "model": self.model.value,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature
+        }
+
+        if json_output:
+            request_params["response_format"] = {"type": "json_object"}
+
+        response = client.chat.completions.create(**request_params)
+
+        print(f"Finish reason: {response.choices[0].finish_reason}")
+        print(f"Completion tokens: {response.usage.completion_tokens}")
+        print(f"Prompt tokens: {response.usage.prompt_tokens}")
+        print(f"Total tokens: {response.usage.total_tokens}")
+
         return response.choices[0].message.content
 
 

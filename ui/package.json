@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@adobe/lit-mobx": "^2.2.2",
+    "@lit-labs/motion": "^1.0.7",
     "@lit/task": "1.0.0",
     "@spectrum-web-components/bundle": "^0.43.0",
     "@webcomponents/custom-elements": "^1.6.0",
