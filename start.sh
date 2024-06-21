@@ -1,13 +1,13 @@
 #!/bin/bash
 
-echo "Starting server..."
+echo "Starting servers..."
 source venv/bin/activate
 
 # Function to handle cleanup
 cleanup() {
     echo "Stopping servers..."
-    kill $WEBPACK_PID $PYTHON_PID
-    wait $WEBPACK_PID $PYTHON_PID 2>/dev/null
+    kill $WEBPACK_PID $TOOLBOX_PID $ASSISTANT_PID 2>/dev/null
+    wait $WEBPACK_PID $TOOLBOX_PID $ASSISTANT_PID 2>/dev/null
     echo "Servers stopped."
 }
 
@@ -18,13 +18,19 @@ trap cleanup SIGINT
 ( cd ui && npm start ) &
 WEBPACK_PID=$!
 
-# Start Python server with or without the --url parameter
-if [ -z "$1" ]; then
-    python -m server.server &
-else
-    python -m server.server --url "$1" &
+# Start ToolboxServer if URL is provided
+if [ -n "$1" ]; then
+    python -m server.start_toolbox_server --url "$1" &
+    TOOLBOX_PID=$!
 fi
-PYTHON_PID=$!
 
-# Wait for both background processes to complete
-wait $WEBPACK_PID $PYTHON_PID
+# Start AssistantServer
+python -m server.start_assistant_server &
+ASSISTANT_PID=$!
+
+# Wait for all background processes to complete
+if [ -n "$TOOLBOX_PID" ]; then
+    wait $WEBPACK_PID $TOOLBOX_PID $ASSISTANT_PID
+else
+    wait $WEBPACK_PID $ASSISTANT_PID
+fi

@@ -10,8 +10,8 @@ import {MobxLitElement} from '@adobe/lit-mobx';
 import {appSettings}from './settings';
 import {authoringSession} from './session';
 
-@customElement('drawing-canvas')
-export class DrawingCanvas extends MobxLitElement {
+@customElement('interactive-overlay')
+export class InteractiveOverlay extends MobxLitElement {
   static styles = css`
     #overlayCanvas {
       position: absolute;
@@ -47,7 +47,7 @@ export class DrawingCanvas extends MobxLitElement {
       canvas.addEventListener('mousemove', (event) => this.draw(event));
       canvas.addEventListener('mouseup', (event) => this.stopDrawing(event));
       canvas.addEventListener('mouseout', (event) => this.stopDrawing(event));
-      this.animateDash();
+      this.animate();
     }
   }
   
@@ -65,13 +65,13 @@ export class DrawingCanvas extends MobxLitElement {
   
   toggleCanvas() {
     this.interactive = !this.interactive;
-    this.clearCanvas();
+    this.clearOverlay();
   }
   
   startDrawing(event) {
     if (!this.interactive) return;
     if (!event.shiftKey) {
-      this.clearCanvas();
+      this.clearOverlay();
     }
     this.drawing = true;
     const canvas = this.canvasRef.value;
@@ -108,52 +108,35 @@ export class DrawingCanvas extends MobxLitElement {
     
     this.currentPath.push({ x, y });
     
-    const intersectedElements = getIntersectedElements([...authoringSession.selectedRegions, this.currentPath]);
-    const enclosingElement = getSmallestEnclosingElement(intersectedElements);
-    
-    this.redraw(intersectedElements, enclosingElement);
+    this.redraw();
   }
   
-  redraw(selectedElements = [], enclosingElement = null) {
+  redraw() {
     const canvas = this.canvasRef.value;
     const context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
     
-    context.lineWidth = 3;
-    context.strokeStyle = 'red';
-    context.setLineDash([10, 5]);
-    context.lineDashOffset = this.dashOffset;
-    
     authoringSession.selectedRegions.forEach(path => {
-      context.beginPath();
-      if (path.length > 0) {
-        context.moveTo(path[0].x, path[0].y);
-        for (let i = 1; i < path.length; i++) {
-          context.lineTo(path[i].x, path[i].y);
-        }
-      }
-      context.stroke();
+      this.drawPath(context, path);
+      this.drawPath(context, path, 'white', 3, 10);
     });
     
     if (this.currentPath.length > 0) {
-      context.beginPath();
-      context.moveTo(this.currentPath[0].x, this.currentPath[0].y);
-      for (let i = 1; i < this.currentPath.length; i++) {
-        context.lineTo(this.currentPath[i].x, this.currentPath[i].y);
-      }
-      context.stroke();
+      this.drawPath(context, this.currentPath);
+      this.drawPath(context, this.currentPath, 'white', 3, 10);
     }
     
     if (appSettings.isDisplayingDebuggingInfo) {
-      // Highlight intersected elements
-      this.highlightSelectedElements(context, selectedElements);
-      
-      // Draw enclosing rectangle
-      this.drawEnclosingRectangle(context, enclosingElement);
+      const selectedElements = getIntersectedElements([...authoringSession.selectedRegions, this.currentPath].filter(path => path.length > 0));
+      const enclosingElement = getSmallestEnclosingElement(selectedElements);
+      if (enclosingElement) {
+        this.drawElements(context, selectedElements, 'rgba(0, 128, 0, 0.6)');
+        this.drawElements(context, [enclosingElement], 'rgba(0, 0, 255, 0.6)');
+      }
     }
   }
   
-  animateDash() {
+  animate() {
     let lastTimestamp = 0;
     
     const step = (timestamp) => {
@@ -163,10 +146,7 @@ export class DrawingCanvas extends MobxLitElement {
       }
       lastTimestamp = timestamp;
       
-      const intersectedElements = getIntersectedElements([...authoringSession.selectedRegions, this.currentPath].filter(path => path.length > 0));
-      const enclosingElement = getSmallestEnclosingElement(intersectedElements);
-      
-      this.redraw(intersectedElements, enclosingElement);
+      this.redraw();
       
       requestAnimationFrame(step);
     };
@@ -174,7 +154,7 @@ export class DrawingCanvas extends MobxLitElement {
     requestAnimationFrame(step);
   }
   
-  clearCanvas() {
+  clearOverlay() {
     const canvas = this.canvasRef.value;
     const context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -182,25 +162,31 @@ export class DrawingCanvas extends MobxLitElement {
     this.currentPath = [];
   }
   
-  highlightSelectedElements(context, elements) {
+  drawPath(context, path, color = 'red', lineWidth = 3, dashOffset = 0) {
+    context.strokeStyle = color;
+    context.lineWidth = lineWidth;
+    context.setLineDash([10, 10]);
+    context.lineDashOffset = this.dashOffset + dashOffset;
+
+    context.beginPath();
+    if (path.length > 0) {
+      context.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        context.lineTo(path[i].x, path[i].y);
+      }
+    }
+    context.stroke();
+  }
+  
+  drawElements(context, elements, color, lineWidth = 1) {
     elements.forEach(element => {
       const rect = element.getBoundingClientRect();
       const canvasRect = this.canvasRef.value.getBoundingClientRect();
-      context.strokeStyle = 'rgba(0, 128, 0, 0.8)';
-      context.lineWidth = 1;
+      context.strokeStyle = color;
+      context.lineWidth = lineWidth;
       context.setLineDash([10, 2]);
       context.strokeRect(rect.left - canvasRect.left, rect.top - canvasRect.top, rect.width, rect.height);
     });
-  }
-  
-  drawEnclosingRectangle(context, element) {
-    if (!element) return;
-    const rect = element.getBoundingClientRect();
-    const canvasRect = this.canvasRef.value.getBoundingClientRect();
-    context.strokeStyle = 'rgba(0, 0, 255, 0.8)';
-    context.lineWidth = 1;
-    context.setLineDash([10, 2]);
-    context.strokeRect(rect.left - canvasRect.left, rect.top - canvasRect.top, rect.width, rect.height);
   }
   
   render() {

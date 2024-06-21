@@ -26,7 +26,7 @@ A playground and toolkit for the Mystique project.
     source venv/bin/activate
     pip install -r requirements.txt
     playwright install
-    cd ui && npm install
+    cd ui && npm install && cd ..
     ```
 
 1. Install the Chrome extension (optional):

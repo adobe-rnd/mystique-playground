@@ -13,7 +13,7 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
     def capabilities(self):
         return [StrategyCapability.GENERATOR]
 
-    async def generate(self, url, selector):
+    async def generate(self, url, selector, prompt):
         self.send_progress(f"Fetching {url}...")
         await asyncio.sleep(1)
 

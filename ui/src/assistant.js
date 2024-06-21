@@ -2,7 +2,7 @@ import { customElement } from 'lit/decorators.js';
 import { css, html, LitElement } from 'lit';
 
 import './prompt.js';
-import './drawing.js';
+import './overlay.js';
 import './settings.js';
 
 import '@spectrum-web-components/theme/sp-theme.js';
@@ -16,7 +16,7 @@ export class AssistantRoot extends LitElement {
   render() {
     return html`
       <sp-theme theme="spectrum" color="light" scale="medium">
-        <drawing-canvas></drawing-canvas>
+        <interactive-overlay></interactive-overlay>
         <prompt-component></prompt-component>
         <settings-button></settings-button>
       </sp-theme>

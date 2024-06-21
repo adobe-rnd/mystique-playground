@@ -1,67 +1,6 @@
 import html2canvas from 'html2canvas';
 import * as polygonClipping from 'polygon-clipping';
-
-export function getCssSelector(element) {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
-    return null;
-  }
-  
-  if (element.id) {
-    return `#${element.id}`;
-  }
-  
-  const parts = [];
-  
-  while (element && element.nodeType === Node.ELEMENT_NODE) {
-    let selector = element.nodeName.toLowerCase();
-    
-    if (element.id) {
-      selector = `#${element.id}`;
-      parts.unshift(selector);
-      break;
-    }
-    
-    if (element.className) {
-      const classNames = element.className.trim().split(/\s+/);
-      if (classNames.length > 0) {
-        selector = '.' + classNames.join('.');
-      }
-    }
-    
-    if (!element.id && !element.className) {
-      let sibling = element;
-      let nth = 1;
-      while (sibling.previousElementSibling) {
-        sibling = sibling.previousElementSibling;
-        if (sibling.nodeName.toLowerCase() === element.nodeName.toLowerCase()) {
-          nth++;
-        }
-      }
-      if (nth !== 1) {
-        selector += `:nth-of-type(${nth})`;
-      }
-    }
-    
-    parts.unshift(selector);
-    element = element.parentElement;
-    
-    // Stop if we've reached an element with an ID or a body element
-    if (element && (element.id || element.nodeName.toLowerCase() === 'body')) {
-      break;
-    }
-  }
-  
-  const finalSelector = parts.join(' > ');
-  
-  // Ensure uniqueness
-  if (document.querySelectorAll(finalSelector).length === 1) {
-    return finalSelector;
-  }
-  
-  console.warn('Non-unique selector:', finalSelector);
-  
-  return parts.join(' > ');
-}
+import {isElementPositionedOverContent, isElementVisible} from './dom';
 
 export function calculateDistance(point1, point2) {
   return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
@@ -169,6 +108,14 @@ export function getIntersectedElements(paths) {
     
     // Check intersection with each DOM element
     allElements.forEach(element => {
+      if (!isElementVisible(element)) return;
+      if (isElementPositionedOverContent(element)) return;
+      if (element === document.body) return;
+      if (element.style.opacity === '0') return;
+      if (element.style.zIndex === '-1') return;
+      if (element.style.pointerEvents === 'none') return;
+      if (element.style.position === 'fixed') return;
+      if (element.style.position === 'absolute') return;
       const rect = element.getBoundingClientRect();
       const boundingBox = {
         left: rect.left + window.scrollX,
@@ -224,102 +171,33 @@ export function getSmallestEnclosingElement(elements) {
   return smallestEnclosingElement;
 }
 
-export async function captureScreenshot(element) {
+export async function captureScreenshot(element, maxWidth = 214, maxHeight = 214) {
   try {
     const canvas = await html2canvas(element);
+    let originalWidth = canvas.width;
+    let originalHeight = canvas.height;
     
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    // Calculate the scaling factor while maintaining the aspect ratio
+    let scale = Math.min(maxWidth / originalWidth, maxHeight / originalHeight);
+    
+    // Set the scaled width and height
+    let scaledWidth = originalWidth * scale;
+    let scaledHeight = originalHeight * scale;
+    
+    // Create a new canvas to draw the scaled image
+    const scaledCanvas = document.createElement('canvas');
+    scaledCanvas.width = scaledWidth;
+    scaledCanvas.height = scaledHeight;
+    const ctx = scaledCanvas.getContext('2d');
+    
+    // Draw the scaled image on the new canvas
+    ctx.drawImage(canvas, 0, 0, scaledWidth, scaledHeight);
+    
+    const blob = await new Promise(resolve => scaledCanvas.toBlob(resolve, 'image/png'));
     const arrayBuffer = await blob.arrayBuffer();
     return new Uint8Array(arrayBuffer);
     
   } catch (error) {
     throw new Error('Error capturing screenshot: ' + error.message);
   }
-}
-
-export async function getElementHtmlWithStyles(element) {
-  const essentialCssProperties = [
-    "color",
-    "background-color",
-    "background-image",
-    "background-size",
-    "font-family",
-    "font-size",
-    "font-weight",
-    "line-height",
-    "text-align",
-    "text-decoration",
-    "text-transform",
-    "display",
-    "position",
-    "top",
-    "right",
-    "bottom",
-    "left",
-    "float",
-    "clear",
-    "margin",
-    "padding",
-    "border",
-    "width",
-    "height",
-    "box-sizing",
-    "flex-direction",
-    "justify-content",
-    "align-items",
-    "flex-wrap",
-    "grid-template-columns",
-    "grid-template-rows",
-    "grid-gap",
-    "transition",
-    "animation",
-    "keyframes",
-    "transform",
-    "translate",
-    "rotate",
-    "scale",
-    "visibility",
-    "opacity",
-    "z-index",
-    "media queries"
-  ];
-  
-  function getExplicitlySetStyles(element) {
-    const originalComputedStyle = window.getComputedStyle(element);
-    console.log(originalComputedStyle);
-    const explicitlySetStyles = {};
-    for (let property of originalComputedStyle) {
-      if (essentialCssProperties.includes(property)) {
-        explicitlySetStyles[property] = originalComputedStyle.getPropertyValue(property);
-      }
-    }
-    return explicitlySetStyles;
-  }
-  
-  function applyInlineStyles(element) {
-    const styles = getExplicitlySetStyles(element);
-    console.log(styles);
-    let styleString = '';
-    for (let property in styles) {
-      styleString += `${property}: ${styles[property]}; `;
-    }
-    element.setAttribute('style', styleString);
-    for (let child of element.children) {
-      applyInlineStyles(child);
-    }
-  }
-  
-  function createStyledClone(element) {
-    const clone = element.cloneNode(true);
-    applyInlineStyles(clone);
-    return clone;
-  }
-  
-  const clonedElement = createStyledClone(element);
-  
-  // Create a wrapper div to hold the cloned element
-  const wrapper = document.createElement('div');
-  wrapper.appendChild(clonedElement);
-  
-  return wrapper.innerHTML;
 }

@@ -14,8 +14,10 @@ class LayoutGenerationStrategy(AbstractGenerationStrategy):
     def capabilities(self):
         return [StrategyCapability.GENERATOR]
 
-    async def generate(self, url, selector):
+    async def generate(self, url, selector, prompt):
         scraper = WebScraper()
+
+        print(f"Prompt: {prompt}")
 
         self.send_progress(f"Fetching HTML content from {url}...")
         html, screenshot = await scraper.get_html_and_screenshot(url, selector, with_styles=True)

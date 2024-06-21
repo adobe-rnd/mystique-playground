@@ -8,10 +8,12 @@ import '@spectrum-web-components/theme/src/themes.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import '@spectrum-web-components/combobox/sp-combobox.js';
+import '@spectrum-web-components/textfield/sp-textfield.js';
 
 import './toolbox.css';
-import {getCssSelector} from './utils';
 import {selectElement} from './selection';
+import {generateCssSelector} from './dom';
+import {authoringSession} from './session';
 
 @customElement('mystique-overlay')
 export class MystiqueOverlay extends LitElement {
@@ -19,20 +21,21 @@ export class MystiqueOverlay extends LitElement {
   static styles = css`
     .container {
       display: flex;
-      flex-direction: row;
-      gap: 20px;
-      align-items: end;
+      flex-direction: column;
+      gap: 25px;
+      align-items: start;
       transform: translate(-50%, 0);
-      width: 70%;
+      width: 100%;
+      max-width: 800px;
       position: fixed;
       bottom: 25px;
       left: 50%;
       z-index: 1000;
-      background-color: rgba(255, 255, 255, 0.8);
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      background-color: rgba(255, 255, 255, 1);
+      box-shadow: 0 0 10px 10px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(0, 0, 0, 0.3);
       border-radius: 5px;
-      padding: 10px;
+      padding: 20px;
     }
 
     .left-panel {
@@ -41,7 +44,7 @@ export class MystiqueOverlay extends LitElement {
       align-items: start;
       justify-content: end;
       gap: 10px;
-      width: 40%;
+      width: 100%;
     }
 
     .selected-block {
@@ -79,8 +82,7 @@ export class MystiqueOverlay extends LitElement {
       flex-direction: column;
       justify-content: end;
       gap: 10px;
-      margin-left: 50px;
-      width: 60%;
+      width: 100%;
     }
 
     sp-progress-circle[hidden] {
@@ -125,6 +127,7 @@ export class MystiqueOverlay extends LitElement {
   @state() accessor selectedStrategy = null;
   
   @state() accessor selectedElement = null;
+  @state() accessor prompt = '';
   
   @state() accessor busy = false;
   @state() accessor statusMessage = 'Ready!';
@@ -146,14 +149,19 @@ export class MystiqueOverlay extends LitElement {
   
   selectStrategy(event) {
     this.selectedStrategy = event.target.value;
+    this.prompt = '';
     console.debug('Selected strategy:', this.selectedStrategy);
+  }
+  
+  setPrompt(event) {
+    this.prompt = event.target.value;
   }
   
   async select() {
     this.style.display = 'none';
     this.selectedElement = await selectElement();
     this.style.display = null;
-    console.debug(getCssSelector(this.selectedElement));
+    console.debug(generateCssSelector(this.selectedElement));
   }
   
   reset() {
@@ -167,7 +175,8 @@ export class MystiqueOverlay extends LitElement {
     
     const url = 'http://localhost:4000/generate' +
       '?url=' + encodeURIComponent(window.location.href) +
-      '&selector=' + encodeURIComponent(getCssSelector(this.selectedElement)) +
+      '&prompt=' + encodeURIComponent(this.prompt) +
+      '&selector=' + encodeURIComponent(generateCssSelector(this.selectedElement)) +
       '&strategy=' + selectedStrategyId;
     
     const eventSource = new EventSource(url);
@@ -180,7 +189,7 @@ export class MystiqueOverlay extends LitElement {
           this.statusMessage = 'Success!';
           this.busy = false;
           eventSource.close();
-          window.open('http://localhost:4001?variationId=' + payload + '&cacheBuster=' + Date.now(), '_blank');
+          window.open('http://localhost:4000?variationId=' + payload + '&t=' + Date.now(), '_blank');
           break;
         case 'error':
           console.error('Received message:', payload);
@@ -209,7 +218,7 @@ export class MystiqueOverlay extends LitElement {
             <div class="left-panel">
               <div class="selected-block">
                 <div>Selected block: </div>
-                <div>${this.selectedElement ? getCssSelector(this.selectedElement) : 'none'}</div>
+                <div>${this.selectedElement ? generateCssSelector(this.selectedElement) : 'none'}</div>
               </div>
               <div class="selection-controls">
                 <sp-button variant="primary" @click=${() => this.select()} ?disabled=${!!this.selectedElement}>Select</sp-button>
@@ -217,19 +226,33 @@ export class MystiqueOverlay extends LitElement {
               </div>
             </div>
             <div class="right-panel">
-              <div class="status">
-                <div>Status:</div>
-                <sp-progress-circle label="Generating..." indeterminate size="s" ?hidden=${!this.busy}></sp-progress-circle>
-                <div class="status-message">${this.statusMessage}</div>
-              </div>
               <div class="generation-controls">
-                <sp-button variant="primary" @click=${() => this.generate()} ?disabled=${!this.selectedElement || !this.selectedStrategy || this.busy}>Generate</sp-button>
-                <sp-combobox value=${this.selectedStrategy} @change=${this.selectStrategy}>
-                  ${this.strategies.map(strategy => html`
-                    <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
-                  `)}
-                </sp-combobox>
+                <div style="display: flex; flex-grow: 1; flex-direction: column; gap: 10px">
+                  <div style="display: flex; flex-direction: row; gap: 10px">
+                    <sp-combobox value=${this.selectedStrategy} @change=${this.selectStrategy} style="width: 100%">
+                      ${this.strategies.map(strategy => html`
+                        <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
+                      `)}
+                    </sp-combobox>
+                    <sp-button variant="primary" @click=${() => this.generate()} ?disabled=${!this.selectedElement || !this.selectedStrategy || this.busy}>Generate</sp-button>
+                  </div>
+                  <sp-textfield
+                      placeholder="Optional prompt for the AI model"
+                      multiline
+                      rows="3"
+                      style="width: 100%"
+                      @input=${this.setPrompt}
+                      .value=${this.prompt}
+                      ?disabled=${this.busy}
+                  ></sp-textfield>
+                </div>
               </div>
+            </div>
+            <div class="status">
+              <div>Status:</div>
+              <sp-progress-circle label="Generating..." indeterminate size="s" ?hidden=${!this.busy}></sp-progress-circle>
+              <div class="status-message">${this.statusMessage}</div>
+            </div>
           </div>
         </sp-theme>
     `;

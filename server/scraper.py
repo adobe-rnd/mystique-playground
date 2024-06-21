@@ -3,7 +3,7 @@ from io import BytesIO
 
 from playwright.async_api import async_playwright
 
-from server.image import downscale_image
+from server.image import downscale_image, image_to_bytes
 
 
 class WebScraper:
@@ -111,4 +111,4 @@ class WebScraper:
 
             await browser.close()
 
-            return html_with_styles, screenshot
+            return html_with_styles, image_to_bytes(screenshot)

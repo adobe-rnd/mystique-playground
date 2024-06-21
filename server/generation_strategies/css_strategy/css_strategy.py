@@ -15,7 +15,7 @@ class CssGenerationStrategy(AbstractGenerationStrategy):
     def capabilities(self):
         return [StrategyCapability.GENERATOR]
 
-    async def generate(self, url, selector):
+    async def generate(self, url, selector, prompt):
 
         scraper = WebScraper()
         llm = LlmClient()

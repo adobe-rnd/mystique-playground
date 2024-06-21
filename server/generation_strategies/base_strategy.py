@@ -15,7 +15,7 @@ class Action(Enum):
 
 
 class StatusMessage:
-    def __init__(self, action, payload = None):
+    def __init__(self, action, payload=None):
         self.action = action
         self.payload = payload
 
@@ -31,6 +31,63 @@ class AbstractGenerationStrategy(ABC):
         self._status_queue = None
         self._javascript_injections = []
         self._css_injections = []
+
+        # Add CSS for the overlay and spinner
+        self.add_css("""
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.3);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                display: none;
+            }
+            .overlay .message {
+                background-color: rgba(255, 255, 255, 0.6);
+                padding: 20px;
+                border-radius: 10px;
+                font-size: 20px;
+                color: black;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-top: 4px solid #000;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        """)
+
+        # Add JavaScript to show the overlay
+        self.run_javascript("""
+            function showOverlay(message) {
+                let overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                overlay.innerHTML = '<div class="message"><div class="spinner"></div>' + message + '</div>';
+                document.body.appendChild(overlay);
+                overlay.style.display = 'flex';
+            }
+
+            function hideOverlay() {
+                let overlay = document.querySelector('.overlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+            }
+        """)
 
     """
     The unique identifier of the strategy.
@@ -48,11 +105,18 @@ class AbstractGenerationStrategy(ABC):
         return [StrategyCapability.GENERATOR]
 
     @abstractmethod
-    async def generate(self, url, selector):
+    async def generate(self, url, selector, prompt):
         pass
 
     def run_javascript(self, javascript):
         self._javascript_injections.append(javascript)
+
+    def run_javascript_delayed(self, javascript, delay):
+        self.run_javascript(f"""
+            setTimeout(() => {{
+                {javascript}
+            }}, {delay});
+        """)
 
     def run_javascript_when_selector_available(self, selector, javascript):
         self.run_javascript(f"""
@@ -67,8 +131,8 @@ class AbstractGenerationStrategy(ABC):
                         setTimeout(() => {{
                             {javascript}
                         }}, 3000);
-                        console.log('Selector found after mutation');
-                        observer.disconnect();
+                            console.log('Selector found after mutation');
+                            observer.disconnect();
                     }}
                 }});
                 observer.observe(document.body, {{ childList: true, subtree: true }});

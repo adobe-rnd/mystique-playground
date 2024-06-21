@@ -3,6 +3,7 @@ import os
 import re
 from enum import Enum
 from io import BytesIO
+from PIL import Image  # Assuming PIL is used for image processing
 
 from dotenv import load_dotenv
 from openai import AzureOpenAI
@@ -14,7 +15,7 @@ AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
 AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
 
 client = AzureOpenAI(
-    azure_endpoint = AZURE_OPENAI_ENDPOINT,
+    azure_endpoint=AZURE_OPENAI_ENDPOINT,
     api_key=AZURE_OPENAI_API_KEY,
     api_version="2024-02-01"
 )
@@ -58,17 +59,29 @@ class LlmClient:
 
         if image_list:
             for image in image_list:
-                buffered = BytesIO()
-                image.save(buffered, format="PNG")
-                image_encoded_data = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                user_message["content"].append(
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{image_encoded_data}"
+                if isinstance(image, str) and image.startswith('data:image'):
+                    # Image is a data URL
+                    user_message["content"].append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image
+                            }
                         }
-                    }
-                )
+                    )
+                elif isinstance(image, bytes):
+                    # Image is binary data
+                    image_encoded_data = base64.b64encode(image).decode('utf-8')
+                    user_message["content"].append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_encoded_data}"
+                            }
+                        }
+                    )
+                else:
+                    raise ValueError("Image must be either a data URL (str) or binary data (bytes)")
 
         request_params = {
             "model": self.model.value,
@@ -116,5 +129,3 @@ def parse_markdown_output(output, lang='html'):
         return '\n'.join(parsed_data[lang])
 
     return output
-
-

@@ -15,7 +15,7 @@ class TranslationStrategy(AbstractGenerationStrategy):
     def capabilities(self):
         return [StrategyCapability.GENERATOR]
 
-    async def generate(self, url, selector):
+    async def generate(self, url, selector, prompt):
         scraper = WebScraper()
 
         self.send_progress(f"Fetching HTML content from {url}...")
@@ -23,14 +23,14 @@ class TranslationStrategy(AbstractGenerationStrategy):
 
         system_prompt = f"""
             You are a professional translator.
-            You translate HTML content from English to French.
+            You translate HTML content from one language to another.
             You must output the translated HTML only.
         """
 
         llm = LlmClient(ModelType.GPT_4_OMNI, system_prompt=system_prompt)
 
         prompt = f"""
-            Translate all text in the following HTML to French:
+            Translate all text in the following HTML to {prompt or 'French'}.
             
             {html}
         """

@@ -3,8 +3,6 @@ import { css, html, LitElement } from 'lit';
 import { animate } from '@lit-labs/motion';
 import {
   captureScreenshot,
-  getCssSelector,
-  getElementHtmlWithStyles,
   getIntersectedElements,
   getSmallestEnclosingElement
 } from './utils';
@@ -14,12 +12,13 @@ import '@spectrum-web-components/action-button/sp-action-button.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/textfield/sp-textfield.js';
 import '@spectrum-web-components/icon/sp-icon.js';
-import { RevertIcon, SendIcon, CopyIcon, CloseIcon } from '@spectrum-web-components/icons-workflow';
+import { RevertIcon, MagicWandIcon, CopyIcon, CloseIcon } from '@spectrum-web-components/icons-workflow';
 import { undoManager } from './undo';
 import { authoringSession } from './session';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { appSettings } from './settings';
 import { reaction } from 'mobx';
+import {generateCssSelector, getElementHtml} from './dom';
 
 function getSuggestedPrompt(prompt, suggestion, numberOfWords) {
   const suggestions = suggestion ? suggestion.split(' ').slice(0, numberOfWords) : [];
@@ -31,7 +30,7 @@ function getSuggestedPrompt(prompt, suggestion, numberOfWords) {
 
 async function fetchSuggestion(prompt) {
   if (/\w+\s/.test(prompt)) {
-    const url = 'http://localhost:4002/autocomplete';
+    const url = 'http://localhost:4001/autocomplete';
     try {
       const response = await wretch(url)
         .post({ prompt })
@@ -215,13 +214,14 @@ export class PromptComponent extends MobxLitElement {
       return;
     }
     
-    const contextHtml = await getElementHtmlWithStyles(enclosingElement);
+    const contextHtml = await getElementHtml(enclosingElement, false);
     
     this.isFetchingIdeas = true;
     try {
-      console.log('Context HTML:', contextHtml.length);
+      const selector = generateCssSelector(enclosingElement);
+      console.log(`Fetching suggestions for element with selector: ${selector}`);
       
-      const data = await wretch('http://localhost:4002/suggest-prompts')
+      const data = await wretch('http://localhost:4001/suggest-prompts')
         .post({ context: contextHtml })
         .json();
       this.promptIdeas = data.suggestions;
@@ -243,10 +243,12 @@ export class PromptComponent extends MobxLitElement {
       
       const originalHtml = enclosingElement.outerHTML;
       
-      const contextHtml = await getElementHtmlWithStyles(enclosingElement);
+      const contextHtml = await getElementHtml(enclosingElement, appSettings.isAddingInlinedStylesEnabled);
+      console.log('Context HTML:', contextHtml);
       const selectionHtmls = await Promise.all(
-        intersectedElements.map(element => getElementHtmlWithStyles(element))
+        intersectedElements.map(element => getElementHtml(element, appSettings.isAddingInlinedStylesEnabled))
       );
+      // selectionHtmls.forEach((html, index) => console.log(`Selection ${index} HTML:`, html));
       
       const screenshotUint8Array = await captureScreenshot(enclosingElement);
       
@@ -263,12 +265,12 @@ export class PromptComponent extends MobxLitElement {
       console.log('Selection HTML:', selectionHtmls.map(html => html.length).join(', '));
       console.log('Screenshot size:', screenshotUint8Array.length);
       
-      const response = await wretch('http://localhost:4002/assistant')
+      const response = await wretch('http://localhost:4001/assistant')
         .post({
           context: contextHtml,
           selection: selectionHtmls,
           prompt: authoringSession.prompt,
-          screenshot: screenshotDataUrl
+          screenshot: appSettings.isSendingScreenshotsEnabled ? screenshotDataUrl : null
         })
         .json();
       
@@ -282,35 +284,25 @@ export class PromptComponent extends MobxLitElement {
   }
   
   replaceElementWithNewContent(receivedHtml, enclosingElement, originalHtml) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = receivedHtml;
-    const newElement = tempDiv.firstElementChild;
+    const selector = generateCssSelector(enclosingElement);
+    const elementToReplace = document.querySelector(selector);
     
-    if (newElement) {
-      const selector = getCssSelector(enclosingElement);
+    if (elementToReplace && !['body', 'html'].includes(elementToReplace.tagName.toLowerCase())) {
       
-      if (selector) {
-        undoManager.addEntry(
-          `document.querySelector('${selector}').outerHTML = \`${originalHtml}\`;`,
-          `document.querySelector('${selector}').outerHTML = \`${receivedHtml}\`;`,
-          authoringSession.prompt,
-          authoringSession.selectedRegions
-        );
-        
-        const elementToReplace = document.querySelector(selector);
-        if (elementToReplace) {
-          elementToReplace.replaceWith(newElement);
-          authoringSession.setPrompt('');
-          authoringSession.setSelectedRegions([]);
-          this.suggestion = '';
-        } else {
-          console.error('Could not find element to replace using selector:', selector);
-        }
-      } else {
-        console.error('Could not generate a unique selector for the element');
-      }
+      undoManager.addEntry(
+        `document.querySelector('${selector}').outerHTML = \`${originalHtml}\`;`,
+        `document.querySelector('${selector}').outerHTML = \`${receivedHtml}\`;`,
+        authoringSession.prompt,
+        authoringSession.selectedRegions
+      );
+      
+      elementToReplace.outerHTML = receivedHtml;
+      authoringSession.setPrompt('');
+      authoringSession.setSelectedRegions([]);
+      this.suggestion = '';
+
     } else {
-      console.error('Received HTML does not contain a valid element');
+      console.error('Could not generate a unique selector for the element');
     }
   }
   
@@ -347,11 +339,11 @@ export class PromptComponent extends MobxLitElement {
   }
   
   renderPromptIdeasAndStatus() {
-    const renderLoadingMessage = () => html`<div class="balloon label">Generating prompt ideas...</div>`;
+    const renderLoadingMessage = () => html`<div class="balloon label">Generating improvement ideas...</div>`;
     const renderPromptIdea = (idea) => html`
       <div class="balloon" @click=${() => this.handleBalloonClick(idea)} ${animate()}>${idea}</div>`;
-    const renderNoSelectionMessage = () => html`<div class="balloon label">Please make a selection to view prompt ideas...</div>`;
-    const renderApplyingStatus = () => html`<div class="balloon label">Sending prompt...</div>`;
+    const renderNoSelectionMessage = () => html`<div class="balloon label">Please make a selection to view improvement ideas</div>`;
+    const renderApplyingStatus = () => html`<div class="balloon label">Casting a spell...</div>`;
     
     return html`
       <div class="balloon-container" ${animate()}>
@@ -378,8 +370,8 @@ export class PromptComponent extends MobxLitElement {
   renderApplyButton() {
     return html`
       <sp-button class="apply" @click=${this.handleApplyPrompt} variant="accent" ?pending=${this.isApplying} ?disabled=${this.isApplying || !authoringSession.prompt || !authoringSession.selectedRegions.length}>
-        <sp-icon slot="icon" size="m">${SendIcon()}</sp-icon>
-        Send
+        <sp-icon slot="icon" size="m">${MagicWandIcon()}</sp-icon>
+        Try It Out
       </sp-button>
     `;
   }
@@ -443,8 +435,10 @@ export class PromptComponent extends MobxLitElement {
     };
   }
   
-  handleHideButtonClick() {
+  handleCloseButtonClick() {
     window.dispatchEvent(new CustomEvent('toggleAssistant'));
+    authoringSession.setPrompt('');
+    authoringSession.setSelectedRegions([]);
   }
   
   render() {
@@ -454,7 +448,7 @@ export class PromptComponent extends MobxLitElement {
       <div class="prompt-dialog-container">
         <div class="header">
           <h2>Mystique Copilot</h2>
-          <sp-action-button quiet @click=${this.handleHideButtonClick}>
+          <sp-action-button quiet @click=${this.handleCloseButtonClick}>
             <sp-icon slot="icon" size="s">${CloseIcon()}</sp-icon>
           </sp-action-button>
         </div>

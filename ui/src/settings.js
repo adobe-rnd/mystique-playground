@@ -6,12 +6,26 @@ import { SettingsIcon } from '@spectrum-web-components/icons-workflow';
 import localforage from 'localforage';
 
 class AppSettings {
+  @observable accessor isAddingInlinedStylesEnabled = false;
+  @observable accessor isSendingScreenshotsEnabled = false;
   @observable accessor isDisplayingDebuggingInfo = false;
   @observable accessor isAutoSuggestEnabled = false;
   @observable accessor numberOfWordsToSuggest = 3;
   
   constructor() {
     this.loadSettings();
+  }
+  
+  @action
+  async setIsAddingInlinedStylesEnabled(value) {
+    this.isAddingInlinedStylesEnabled = value;
+    await this.saveSettings();
+  }
+  
+  @action
+  async setIsSendingScreenshotsEnabled(value) {
+    this.isSendingScreenshotsEnabled = value;
+    await this.saveSettings();
   }
   
   @action
@@ -34,6 +48,8 @@ class AppSettings {
   
   async saveSettings() {
     const settings = {
+      isAddingInlinedStylesEnabled: this.isAddingInlinedStylesEnabled,
+      isSendingScreenshotsEnabled: this.isSendingScreenshotsEnabled,
       isDisplayingDebuggingInfo: this.isDisplayingDebuggingInfo,
       isAutoSuggestEnabled: this.isAutoSuggestEnabled,
       numberOfWordsToSuggest: this.numberOfWordsToSuggest,
@@ -44,6 +60,8 @@ class AppSettings {
   async loadSettings() {
     const settings = await localforage.getItem('appSettings');
     if (settings) {
+      this.isAddingInlinedStylesEnabled = settings.isAddingInlinedStylesEnabled;
+      this.isSendingScreenshotsEnabled = settings.isSendingScreenshotsEnabled;
       this.isDisplayingDebuggingInfo = settings.isDisplayingDebuggingInfo;
       this.isAutoSuggestEnabled = settings.isAutoSuggestEnabled;
       this.numberOfWordsToSuggest = settings.numberOfWordsToSuggest;
@@ -61,7 +79,7 @@ export class SettingsButton extends LitElement {
     .settings-button {
       position: fixed;
       bottom: 16px;
-      left: 16px;
+      left: 48px;
       background-color: white;
       color: black;
       border: none;
@@ -73,7 +91,7 @@ export class SettingsButton extends LitElement {
       justify-content: center;
       cursor: pointer;
       box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
+      z-index: 10000;
       transition: transform 0.3s, background-color 0.3s;
     }
 
@@ -160,6 +178,14 @@ export class SettingsButton extends LitElement {
     this.isOpen = false;
   }
   
+  toggleAddingInlinedStyles(event) {
+    appSettings.setIsAddingInlinedStylesEnabled(event.target.checked);
+  }
+  
+  toggleSendingScreenshots(event) {
+    appSettings.setIsSendingScreenshotsEnabled(event.target.checked);
+  }
+  
   toggleDisplayingDebuggingInfo(event) {
     appSettings.setIsDisplayingDebuggingInfo(event.target.checked);
   }
@@ -185,6 +211,14 @@ export class SettingsButton extends LitElement {
           <button class="close-button" @click=${this.closePopup}>&times;</button>
         </div>
         <div class="dialog-content">
+          <label>
+            <input type="checkbox" @change=${this.toggleAddingInlinedStyles} .checked=${appSettings.isAddingInlinedStylesEnabled}>
+            Add Inlined Styles
+          </label>
+          <label>
+            <input type="checkbox" @change=${this.toggleSendingScreenshots} .checked=${appSettings.isSendingScreenshotsEnabled}>
+            Send Screenshots
+          </label>
           <label>
             <input type="checkbox" @change=${this.toggleDisplayingDebuggingInfo} .checked=${appSettings.isDisplayingDebuggingInfo}>
             Display Debugging Info

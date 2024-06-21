@@ -1,3 +1,5 @@
+import io
+
 from PIL import Image
 from io import BytesIO
 import requests
@@ -29,3 +31,14 @@ def downscale_image(image, max_width, max_height):
 
     return downscaled_image
 
+
+def image_to_bytes(image: Image.Image, format: str = 'PNG') -> bytes:
+    # Create a BytesIO buffer
+    buffer = io.BytesIO()
+    # Save the image to the buffer in the specified format
+    image.save(buffer, format=format)
+    # Retrieve the bytes from the buffer
+    image_bytes = buffer.getvalue()
+    # Close the buffer
+    buffer.close()
+    return image_bytes
