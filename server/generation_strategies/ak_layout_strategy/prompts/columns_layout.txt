@@ -1,0 +1,34 @@
+Your main goal is to come up with a brand new layout to create a distinct looking design.
+Additional Requirements:
+- Output only the modified CSS with your innovative changes.
+- Think deeply about layouts that spans across multiple rows and columns or combinations of both.
+- The image can be to the left or top of the text content.
+- Prioritize the readability of the text content.
+- Add any new CSS variables and use them but do not modify any existing CSS variables.
+- Do not modify the font family.
+- Do not change the position of the button.
+- Do not modify other properties unrelated to the main goal.
+- Do not add unnecessary background colors.
+- Use !important on all the properties.
+- - {{user_prompt}}
+---
+{{block_css}}
+---
+main .section:is(.columns-container) {
+  margin-bottom: -3rem;
+}
+
+.columns-container h2 {
+  margin-top: 25px;
+  margin-bottom: 50px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.columns-container {
+  margin-top: -2rem;
+}
+---
+{{root_css_vars}}
+---
+{{extracted_html}}

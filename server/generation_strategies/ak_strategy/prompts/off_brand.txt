@@ -1,0 +1,9 @@
+Your main goal is to output all the provided CSS with your innovative changes.
+Additional Requirements:
+- Focus on elements that can drastically improve the design.
+- Add any new CSS variables and use them but do not modify any existing CSS variables.
+- Use !important only on properties where you made changes.
+---
+{{block_css}}
+---
+{{root_css_vars}}

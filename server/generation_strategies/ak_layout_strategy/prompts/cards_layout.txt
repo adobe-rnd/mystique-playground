@@ -1,0 +1,12 @@
+Your main goal is to come up with a new layout to create a distinct looking design.
+Additional Requirements:
+- Output only the modified CSS with your innovative changes.
+- Add any new CSS variables and use them but do not modify any existing CSS variables.
+- Do not modify the font family.
+- Use !important on all the properties.
+---
+{{block_css}}
+---
+{{root_css_vars}}
+---
+{{extracted_html}}
