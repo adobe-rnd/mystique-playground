@@ -4,5 +4,8 @@ node_modules/
 venv/
 dist/
 screenshots/
+__pycache__/
 *.db
 .env
+*.html
+*.css
