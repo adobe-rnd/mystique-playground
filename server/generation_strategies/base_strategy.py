@@ -114,6 +114,7 @@ class AbstractGenerationStrategy(ABC):
     def run_javascript_delayed(self, javascript, delay):
         self.run_javascript(f"""
             setTimeout(() => {{
+                console.log('Running delayed JavaScript...');
                 {javascript}
             }}, {delay});
         """)
@@ -122,6 +123,7 @@ class AbstractGenerationStrategy(ABC):
         self.run_javascript(f"""
             if (document.querySelector('{selector}')) {{    
                 setTimeout(() => {{
+                    console.log('Running JavaScript...');
                     {javascript}
                 }}, 3000);
                 console.log('Selector found');
@@ -129,6 +131,7 @@ class AbstractGenerationStrategy(ABC):
                 const observer = new MutationObserver(mutations => {{
                     if (document.querySelector('{selector}')) {{
                         setTimeout(() => {{
+                            console.log('Running JavaScript...');
                             {javascript}
                         }}, 3000);
                             console.log('Selector found after mutation');
@@ -147,6 +150,7 @@ class AbstractGenerationStrategy(ABC):
         """)
 
     def add_css(self, css):
+        print(f"Adding CSS: {css}")
         self._css_injections.append(css)
 
     def send_progress(self, message):

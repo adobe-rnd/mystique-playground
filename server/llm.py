@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import re
 from enum import Enum
@@ -27,6 +28,35 @@ class ModelType(Enum):
     GPT_35_TURBO = "gpt-35-turbo"
 
 
+
+def evaluate_expression(expression: str):
+    # calculate a math expression
+    return eval(expression)
+
+
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "evaluate_expression",
+            "description": "Evaluate a mathematical expression.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "The mathematical expression to evaluate."
+                    }
+                },
+                "required": ["expression"]
+            }
+        }
+    }
+]
+
+
+
 class LlmClient:
     def __init__(self, model=ModelType.GPT_4_OMNI, system_prompt=None):
         self.model = model
@@ -34,6 +64,9 @@ class LlmClient:
 
     def get_completions(self, prompt, image_list=None, max_tokens=4096, temperature=1.0, json_output=False):
         messages = []
+
+
+
 
         if self.system_prompt:
             messages.append({
@@ -86,6 +119,7 @@ class LlmClient:
         request_params = {
             "model": self.model.value,
             "messages": messages,
+            "tools": tools,
             "max_tokens": max_tokens,
             "temperature": temperature
         }
@@ -94,6 +128,18 @@ class LlmClient:
             request_params["response_format"] = {"type": "json_object"}
 
         response = client.chat.completions.create(**request_params)
+
+
+        if response.choices[0].finish_reason == "tool_calls":
+            for tool_call in response.choices[0].message.tool_calls:
+                print(f"Tool call: {tool_call}")
+                if tool_call.function.name == "evaluate_expression":
+                    function_args = json.loads(tool_call.function.arguments)
+                    expression = function_args["expression"]
+                    result = evaluate_expression(expression)
+                    print(f"Expression: {expression}")
+                    print(f"Result: {result}")
+
 
         print(f"Finish reason: {response.choices[0].finish_reason}")
         print(f"Completion tokens: {response.usage.completion_tokens}")
@@ -136,3 +182,18 @@ def parse_css(content):
     matches = pattern.findall(content)
     css_blocks = [match.strip() for match in matches]
     return css_blocks
+
+
+print(evaluate_expression("1 + 1"))
+
+
+
+llm = LlmClient(ModelType.GPT_4_OMNI)
+
+analysis_prompt = f"""
+            1 + 1 = 
+        """
+
+result = llm.get_completions(analysis_prompt)
+
+print(result)

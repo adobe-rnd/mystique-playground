@@ -72,6 +72,7 @@ class ToolboxServer:
 
                 if css_injections:
                     injections.append(f'''
+                        console.log("Adding CSS...");
                         const style = document.createElement('style');
                         style.innerHTML = `{''.join(css_injections)}`;
                         document.head.appendChild(style);

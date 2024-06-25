@@ -95,7 +95,6 @@ class AssistantServer:
                 Do not make unnecessary changes.
                 
                 Use !important in generated inline CSS rules.
-                Try to avoid changing the structure of the HTML.
             """
 
             llm = LlmClient(ModelType.GPT_4_OMNI, system_prompt=system_prompt)
