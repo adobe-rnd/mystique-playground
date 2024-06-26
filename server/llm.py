@@ -3,12 +3,11 @@ import json
 import os
 import re
 from enum import Enum
-from io import BytesIO
-from PIL import Image  # Assuming PIL is used for image processing
-
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 from jinja2 import Template
+import yaml
+import inspect
 
 load_dotenv()
 
@@ -21,40 +20,57 @@ client = AzureOpenAI(
     api_version="2024-02-01"
 )
 
-
 class ModelType(Enum):
     GPT_4_OMNI = "gpt-4o"
     GPT_4_VISION = "gpt-4v"
     GPT_35_TURBO = "gpt-35-turbo"
 
 
+def parse_css(content):
+    pattern = re.compile(r'```css(.*?)```', re.DOTALL)
+    matches = pattern.findall(content)
+    css_blocks = [match.strip() for match in matches]
+    return css_blocks
 
-def evaluate_expression(expression: str):
-    # calculate a math expression
-    return eval(expression)
+
+def extract_metadata(func):
+    doc = func.__doc__
+    if doc:
+        metadata = yaml.safe_load(doc)
+        return metadata
+    return {}
 
 
-
-tools = [
-    {
+def generate_tool_description(func):
+    metadata = extract_metadata(func)
+    tool_description = {
         "type": "function",
         "function": {
-            "name": "evaluate_expression",
-            "description": "Evaluate a mathematical expression.",
+            "name": func.__name__,
+            "description": metadata.get("description", ""),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "expression": {
-                        "type": "string",
-                        "description": "The mathematical expression to evaluate."
+                    param_name: {
+                        "type": param_details["type"],
+                        "description": param_details["description"]
                     }
+                    for param_name, param_details in metadata.get("parameters", {}).items()
                 },
-                "required": ["expression"]
+                "required": list(metadata.get("parameters", {}).keys())
             }
         }
     }
-]
+    return tool_description
 
+
+def call_function(func_name, args, allowed_functions):
+    if func_name not in allowed_functions:
+        raise ValueError(f"Function {func_name} is not allowed.")
+    func = allowed_functions[func_name]
+    func_params = inspect.signature(func).parameters
+    call_args = {param: args[param] for param in func_params if param in args}
+    return func(**call_args)
 
 
 class LlmClient:
@@ -62,11 +78,8 @@ class LlmClient:
         self.model = model
         self.system_prompt = system_prompt
 
-    def get_completions(self, prompt, image_list=None, max_tokens=4096, temperature=1.0, json_output=False):
+    def get_completions(self, prompt, functions, image_list=None, max_tokens=4096, temperature=1.0, json_output=False):
         messages = []
-
-
-
 
         if self.system_prompt:
             messages.append({
@@ -116,6 +129,9 @@ class LlmClient:
                 else:
                     raise ValueError("Image must be either a data URL (str) or binary data (bytes)")
 
+        tools = [generate_tool_description(func) for func in functions]
+        allowed_functions = {func.__name__: func for func in functions}
+
         request_params = {
             "model": self.model.value,
             "messages": messages,
@@ -129,17 +145,30 @@ class LlmClient:
 
         response = client.chat.completions.create(**request_params)
 
-
-        if response.choices[0].finish_reason == "tool_calls":
+        while response.choices[0].finish_reason == "tool_calls":
+            messages.append(response.choices[0].message)
             for tool_call in response.choices[0].message.tool_calls:
                 print(f"Tool call: {tool_call}")
-                if tool_call.function.name == "evaluate_expression":
-                    function_args = json.loads(tool_call.function.arguments)
-                    expression = function_args["expression"]
-                    result = evaluate_expression(expression)
-                    print(f"Expression: {expression}")
-                    print(f"Result: {result}")
-
+                func_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                result = call_function(func_name, function_args, allowed_functions)
+                print(f"Function: {func_name}")
+                print(f"Arguments: {function_args}")
+                print(f"Result: {result}")
+                messages.append(
+                    {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": tool_call.function.name,
+                        "content": str(result),
+                    }
+                )
+            response = client.chat.completions.create(
+                model=self.model.value,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
 
         print(f"Finish reason: {response.choices[0].finish_reason}")
         print(f"Completion tokens: {response.usage.completion_tokens}")
@@ -147,7 +176,6 @@ class LlmClient:
         print(f"Total tokens: {response.usage.total_tokens}")
 
         return response.choices[0].message.content
-
 
 def create_prompt_from_template(file_path, **kwargs):
     with open(file_path, 'r') as file:
@@ -157,7 +185,6 @@ def create_prompt_from_template(file_path, **kwargs):
     rendered_template = template.render(kwargs)
 
     return rendered_template
-
 
 def parse_markdown_output(output, lang='html'):
     parsed_data = {}
@@ -177,23 +204,39 @@ def parse_markdown_output(output, lang='html'):
     return output
 
 
-def parse_css(content):
-    pattern = re.compile(r'```css(.*?)```', re.DOTALL)
-    matches = pattern.findall(content)
-    css_blocks = [match.strip() for match in matches]
-    return css_blocks
+def evaluate_expression(expression: str) -> float:
+    """
+    description: Evaluate a mathematical expression.
+    parameters:
+      expression:
+        type: string
+        description: The mathematical expression to evaluate.
+    returns:
+      type: float
+      description: The result of the evaluated expression.
+    """
+    return eval(expression)
 
-
-print(evaluate_expression("1 + 1"))
-
-
+def another_custom_function(param1: int, param2: str) -> str:
+    """
+    description: An example of another custom function.
+    parameters:
+      param1:
+        type: integer
+        description: The first parameter.
+      param2:
+        type: string
+        description: The second parameter.
+    returns:
+      type: string
+      description: A formatted string combining param1 and param2.
+    """
+    return f"Combined result: {param1} and {param2}"
 
 llm = LlmClient(ModelType.GPT_4_OMNI)
 
-analysis_prompt = f"""
-            1 + 1 = 
-        """
+analysis_prompt = f"""What is 1 + 1 minus 1 multiplied by 2?"""
 
-result = llm.get_completions(analysis_prompt)
+result = llm.get_completions(analysis_prompt, functions=[evaluate_expression, another_custom_function])
 
 print(result)

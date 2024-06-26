@@ -11,3 +11,4 @@ werkzeug==2.2.2
 requests
 pillow
 bs4
+pyyaml
