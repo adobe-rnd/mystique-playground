@@ -5,6 +5,7 @@ import wretch from 'wretch';
 import '@spectrum-web-components/theme/sp-theme.js';
 import '@spectrum-web-components/theme/src/themes.js';
 
+import '@spectrum-web-components/field-label/sp-field-label.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import '@spectrum-web-components/combobox/sp-combobox.js';
@@ -13,7 +14,15 @@ import '@spectrum-web-components/textfield/sp-textfield.js';
 import './toolbox.css';
 import {selectElement} from './selection';
 import {generateCssSelector} from './dom';
-import {authoringSession} from './session';
+
+function getUniqueCategories(strategies) {
+  return strategies.reduce((acc, strategy) => {
+    if (!acc.includes(strategy.category)) {
+      acc.push(strategy.category);
+    }
+    return acc;
+  }, []);
+}
 
 @customElement('mystique-overlay')
 export class MystiqueOverlay extends LitElement {
@@ -85,10 +94,19 @@ export class MystiqueOverlay extends LitElement {
       width: 100%;
     }
 
+    .field-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    sp-combobox {
+      width: 100%;
+    }
+    
     sp-progress-circle[hidden] {
       display: none;
     }
-
+    
     .status {
       display: flex;
       flex-direction: row;
@@ -117,13 +135,10 @@ export class MystiqueOverlay extends LitElement {
       align-items: center;
       gap: 10px;
     }
-
-    .generation-controls sp-combobox {
-      width: 300px;
-    }
   `;
 
   @state() accessor strategies = [];
+  @state() accessor selectedCategory = null;
   @state() accessor selectedStrategy = null;
   
   @state() accessor selectedElement = null;
@@ -143,8 +158,21 @@ export class MystiqueOverlay extends LitElement {
       console.error('No strategies found.');
       return;
     }
+    if (getUniqueCategories(this.strategies).includes('Stable')) {
+      this.selectedCategory = 'Stable';
+    }
     console.debug('Strategies:', this.strategies);
-    this.selectedStrategy = this.strategies[0].name;
+  }
+  
+  getStrategiesByCategory(category) {
+    return this.strategies.filter(strategy => strategy.category === category);
+  }
+  
+  selectCategory(event) {
+    this.selectedCategory = event.target.value;
+    this.selectedStrategy = null;
+    this.prompt = '';
+    console.debug('Selected category:', this.selectedCategory);
   }
   
   selectStrategy(event) {
@@ -166,6 +194,10 @@ export class MystiqueOverlay extends LitElement {
   
   reset() {
     this.selectedElement = null;
+  }
+  
+  isGenerateEnabled() {
+    return this.selectedElement && this.selectedStrategy && !this.busy;
   }
   
   generate() {
@@ -228,13 +260,24 @@ export class MystiqueOverlay extends LitElement {
             <div class="right-panel">
               <div class="generation-controls">
                 <div style="display: flex; flex-grow: 1; flex-direction: column; gap: 10px">
-                  <div style="display: flex; flex-direction: row; gap: 10px">
-                    <sp-combobox value=${this.selectedStrategy} @change=${this.selectStrategy} style="width: 100%">
-                      ${this.strategies.map(strategy => html`
-                        <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
-                      `)}
-                    </sp-combobox>
-                    <sp-button variant="primary" @click=${() => this.generate()} ?disabled=${!this.selectedElement || !this.selectedStrategy || this.busy}>Generate</sp-button>
+                  <div style="display: flex; flex-direction: row; gap: 10px; align-items: end">
+                    <div class="field-container" style="width: 200px; flex: 0 0 auto">
+                      <sp-field-label>Category:</sp-field-label>
+                      <sp-combobox value=${this.selectedCategory} @change=${this.selectCategory}>
+                        ${getUniqueCategories(this.strategies).map(category => html`
+                          <sp-menu-item value="${category}">${category}</sp-menu-item>
+                        `)}
+                      </sp-combobox>
+                    </div>
+                    <div class="field-container" style="flex-grow: 1">
+                      <sp-field-label>Strategy:</sp-field-label>
+                      <sp-combobox value=${this.selectedStrategy} @change=${this.selectStrategy}>
+                        ${this.getStrategiesByCategory(this.selectedCategory).map(strategy => html`
+                          <sp-menu-item value="${strategy.id}">${strategy.name}</sp-menu-item>
+                        `)}
+                      </sp-combobox>
+                    </div>
+                    <sp-button variant="primary" style="flex-grow: 0" @click=${() => this.generate()} ?disabled=${!this.isGenerateEnabled()}>Generate</sp-button>
                   </div>
                   <sp-textfield
                       placeholder="Optional prompt for the AI model"

@@ -113,8 +113,8 @@ class ToolboxServer:
 
     def get_generation_strategies(self):
         strategies = [
-            {"id": id, "name": name, "capabilities": [c.value for c in capabilities]}
-            for id, name, capabilities, _ in self.generation_strategies
+            {"id": id, "name": name, "category": category.value}
+            for id, name, category, *_ in self.generation_strategies
         ]
         return jsonify(strategies)
 
