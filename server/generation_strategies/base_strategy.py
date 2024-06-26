@@ -3,9 +3,9 @@ from enum import Enum
 import json
 
 
-class StrategyCapability(Enum):
-    GENERATOR = 'generator'
-    ASSISTANT = 'assistant'
+class StrategyCategory(Enum):
+    STABLE = 'Stable'
+    EXPERIMENTAL = 'Experimental'
 
 
 class Action(Enum):
@@ -100,9 +100,8 @@ class AbstractGenerationStrategy(ABC):
     def name(self):
         pass
 
-    @abstractmethod
-    def capabilities(self):
-        return [StrategyCapability.GENERATOR]
+    def category(self):
+        return StrategyCategory.EXPERIMENTAL
 
     @abstractmethod
     async def generate(self, url, selector, prompt):

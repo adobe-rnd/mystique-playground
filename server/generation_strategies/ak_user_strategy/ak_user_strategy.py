@@ -1,6 +1,6 @@
 import os
 
-from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCapability
+from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCategory
 from server.llm import create_prompt_from_template, parse_markdown_output, parse_css, LlmClient
 from server.scraper import WebScraper
 from server.image import image_to_bytes
@@ -11,10 +11,10 @@ class AKGenerationStrategy(AbstractGenerationStrategy):
         return "ak-user-generation"
 
     def name(self):
-        return "AK User Generation"
+        return "Layout Enhancement with User Instructions (AK)"
 
-    def capabilities(self):
-        return [StrategyCapability.GENERATOR]
+    def category(self):
+        return StrategyCategory.STABLE
 
     async def generate(self, url, selector, prompt):
         scraper = WebScraper()

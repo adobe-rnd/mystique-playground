@@ -56,7 +56,7 @@ def load_generation_strategies():
     for cls in classes:
         try:
             strategy = cls()
-            strategies.append((strategy.id(), strategy.name(), strategy.capabilities(), cls))
+            strategies.append((strategy.id(), strategy.name(), strategy.category(), cls))
         except Exception as e:
             print(f"Error instantiating {cls}: {e}", file=sys.stderr)
 
