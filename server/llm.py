@@ -137,7 +137,8 @@ class LlmClient:
             "messages": messages,
             "tools": tools,
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
+            "top_p": 1.0,
         }
 
         if json_output:
