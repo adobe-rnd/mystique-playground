@@ -54,20 +54,21 @@ class LayoutAndContentEnhancementStrategy(AbstractGenerationStrategy):
         proposed_changes = llm.get_completions(analysis_prompt, [screenshot], temperature=0.0)
 
         prompt = f"""
-            You are required to output only the modified HTML content with inline CSS and updated text content.
-            Use style attributes exclusively to adjust the layout.
-            
-            ```Instructions:```
-            - Apply the proposed changes specified below.
-            - Generate a new layout and text content for the provided HTML.
-            - You MUST not use emojis or any other non-HTML elements.
-            - You MUST not change images and URLs.
-            
-            ```Proposed Changes:```
-            {proposed_changes}
-
-            ```Original HTML Content:```
-            {html}
+        You are required to output only the modified HTML content with inline CSS and updated text content.
+        Use style attributes exclusively to adjust the layout.
+        
+        Instructions:
+        - Apply the proposed changes specified below.
+        - Generate a new layout and update the text content for the provided HTML.
+        - Maintain good contrast between text and background colors.
+        - Do NOT use emojis or any other non-HTML elements.
+        - Do NOT change images or URLs.
+        
+        Proposed Changes:
+        {proposed_changes}
+        
+        Original HTML Content:
+        {html}
         """
 
         self.send_progress("Generating new layout and content...")
