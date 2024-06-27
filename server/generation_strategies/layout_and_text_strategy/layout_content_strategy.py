@@ -24,11 +24,6 @@ class LayoutAndContentEnhancementStrategy(AbstractGenerationStrategy):
         self.send_progress(f"Fetching HTML content from {url}...")
         html, screenshot = await scraper.get_html_and_screenshot(url, selector, with_styles=False)
 
-#        screenshot = downscale_image(screenshot, max_width=256, max_height=256)
-        os.makedirs('screenshots', exist_ok=True)
-        with open('screenshots/screenshot.png', 'wb') as f:
-            f.write(screenshot)
-
         system_prompt = f"""
             You are a professional web developer, designer, or content creator.
             You are tasked with enhancing the style, layout and content of the following HTML content.
