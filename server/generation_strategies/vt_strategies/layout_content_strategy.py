@@ -27,6 +27,7 @@ class LayoutAndContentEnhancementStrategy(AbstractGenerationStrategy):
             You are tasked with enhancing the style, layout and content of the following HTML content.
             You MUST never change or create new images or URLs.
             You MUST think in steps.
+            You MUST not use gradients for background colors.
         """
 
         llm = LlmClient(ModelType.GPT_4_OMNI, system_prompt=system_prompt)

@@ -19,7 +19,7 @@ class TranscreationStrategy(AbstractGenerationStrategy):
         scraper = WebScraper()
 
         self.send_progress(f"Fetching HTML content from {url}...")
-        html, _ = await scraper.get_html_and_screenshot(url, selector, with_styles=False, wait_time=60000)
+        html, _ = await scraper.get_html_and_screenshot(url, selector, with_styles=False)
 
         system_prompt = f"""
             You are a professional copywriter and translator.

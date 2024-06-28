@@ -61,6 +61,7 @@ class LayoutAndContentEnhancementStrategy(AbstractGenerationStrategy):
         system_prompt = f"""
             You are a professional web developer, designer, or content creator.
             You are tasked with enhancing the style, layout, content and images of the following HTML content.
+            You MUST not use gradients for background colors.
             You MUST think in steps.
         """
 
