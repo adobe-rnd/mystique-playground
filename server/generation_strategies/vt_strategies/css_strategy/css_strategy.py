@@ -10,7 +10,7 @@ class CssGenerationStrategy(AbstractGenerationStrategy):
         return "css-generation"
 
     def name(self):
-        return "CSS Generation"
+        return "CSS Generation (VT)"
 
     async def generate(self, url, selector, prompt):
 

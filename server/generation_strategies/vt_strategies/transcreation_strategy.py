@@ -10,7 +10,7 @@ class TranscreationStrategy(AbstractGenerationStrategy):
         return "transcreation"
 
     def name(self):
-        return "Transcreation"
+        return "Transcreation (VT)"
 
     def category(self):
         return StrategyCategory.STABLE

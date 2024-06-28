@@ -11,7 +11,7 @@ class AKGenerationStrategy(AbstractGenerationStrategy):
         return "ak-theme-generation"
 
     def name(self):
-        return "Theme Enhancement"
+        return "Theme Enhancement (AK)"
 
     def category(self):
         return StrategyCategory.STABLE

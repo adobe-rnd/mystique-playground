@@ -1,3 +1,4 @@
+import base64
 import io
 
 from PIL import Image
@@ -13,7 +14,7 @@ def load_image(image_source):
         with open(image_source, "rb") as image_file:
             image = BytesIO(image_file.read())
 
-    return image.read()
+    return Image.open(image)
 
 
 def downscale_image(image, max_width, max_height):
@@ -42,3 +43,9 @@ def image_to_bytes(image: Image.Image, format: str = 'PNG') -> bytes:
     # Close the buffer
     buffer.close()
     return image_bytes
+
+
+def image_to_data_url(image: Image.Image, format: str = 'PNG') -> str:
+    image_bytes = image_to_bytes(image, format)
+    image_encoded_data = base64.b64encode(image_bytes).decode('utf-8')
+    return f"data:image/{format.lower()};base64,{image_encoded_data}"

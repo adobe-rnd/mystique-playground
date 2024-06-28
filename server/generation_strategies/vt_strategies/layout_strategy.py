@@ -9,7 +9,7 @@ class LayoutEnhancementStrategy(AbstractGenerationStrategy):
         return "layout-enhancement"
 
     def name(self):
-        return "Layout Enhancement (V)"
+        return "Layout Enhancement (VT)"
 
     def category(self):
         return StrategyCategory.STABLE

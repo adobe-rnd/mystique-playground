@@ -50,6 +50,15 @@ source venv/bin/activate
 ./start.sh
 ```
 
+## Running tests
+
+To run the tests, execute the following command:
+
+```shell
+source venv/bin/activate
+python -m unittest discover -s server/tests
+```
+
 ## Adding a New Generation Strategy
 
 To create a new generation strategy, follow these steps:

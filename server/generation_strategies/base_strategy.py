@@ -6,6 +6,7 @@ import json
 class StrategyCategory(Enum):
     STABLE = 'Stable'
     EXPERIMENTAL = 'Experimental'
+    INTERNAL = 'Internal'
 
 
 class Action(Enum):
@@ -149,7 +150,6 @@ class AbstractGenerationStrategy(ABC):
         """)
 
     def add_css(self, css):
-        print(f"Adding CSS: {css}")
         self._css_injections.append(css)
 
     def send_progress(self, message):

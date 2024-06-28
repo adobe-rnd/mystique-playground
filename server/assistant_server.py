@@ -1,24 +1,16 @@
 import base64
 import random
 import string
-import traceback
 import json
 
-import asyncio
 import os
 from datetime import datetime
 
 from flask import Flask, Response, request, jsonify, make_response, send_from_directory
-import threading
-import queue
 
 from flask_cors import CORS
 
-from server.db import JsCodeInjections
-from server.generation_strategies.base_strategy import Action, StatusMessage
-from server.html_utils import compress_html, decompress_html
 from server.llm import LlmClient, ModelType, parse_markdown_output
-from server.strategy_loader import load_generation_strategies
 
 class AssistantServer:
     def __init__(self):
@@ -69,21 +61,6 @@ class AssistantServer:
             else:
                 print('No screenshot data received')
 
-            # context_compression_result = compress_html(context_html, replace_urls=True)
-            # compressed_html = context_compression_result['compressed_html']
-            # url_mapping = context_compression_result['url_mapping']
-            # print(f'Compressed HTML: {compressed_html}')
-            # print("Compression Ratio (context): {:.2f}%".format(context_compression_result['compression_ratio']))
-
-            # compressed_selected_htmls = []
-            # for selected_html in selected_htmls:
-            #     selection_compression_result = compress_html(selected_html, replace_urls=True, existing_url_mapping=url_mapping)
-            #     compressed_selected_htmls.append(selection_compression_result['compressed_html'])
-            #     print(f'Compressed Selection HTML: {selection_compression_result["compressed_html"]}')
-            #     print("Compression Ratio (selection): {:.2f}%".format(selection_compression_result['compression_ratio']))
-
-            # selection_htmls = '\n'.join(map(lambda x: f"SELECTED_HTML_FRAGMENT:\n{x}\n", compressed_selected_htmls))
-
             system_prompt = f"""
                 You are a professional web developer.
                 You are given a task to make changes to the provided HTML.
@@ -95,6 +72,7 @@ class AssistantServer:
                 Do not make unnecessary changes.
                 
                 Use !important in generated inline CSS rules.
+                Try to avoid changing the structure of the HTML.
             """
 
             llm = LlmClient(ModelType.GPT_4_OMNI, system_prompt=system_prompt)
@@ -118,10 +96,6 @@ class AssistantServer:
             llm_response = llm.get_completions(prompt, image_list=image_list, temperature=0.0)
 
             new_html = parse_markdown_output(llm_response, lang='html')
-
-            # decompressed_html = decompress_html(new_html, context_compression_result['url_mapping'])
-
-            # print(f'Reconstructed HTML: {decompressed_html}')
 
             return jsonify({"html": new_html})
         except Exception as e:

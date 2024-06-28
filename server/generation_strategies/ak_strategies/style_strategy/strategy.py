@@ -11,7 +11,7 @@ class AKGenerationStrategy(AbstractGenerationStrategy):
         return "ak-generation"
 
     def name(self):
-        return "Styling Enhancement (AK)"
+        return "Style Enhancement (AK)"
 
     def category(self):
         return StrategyCategory.STABLE

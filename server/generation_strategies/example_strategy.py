@@ -10,6 +10,9 @@ class DefaultGenerationStrategy(AbstractGenerationStrategy):
     def name(self):
         return "Example Strategy"
 
+    def category(self):
+        return StrategyCategory.INTERNAL
+
     async def generate(self, url, selector, prompt):
         self.send_progress(f"Fetching {url}...")
         await asyncio.sleep(1)
