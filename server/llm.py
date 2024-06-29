@@ -8,6 +8,7 @@ from openai import AzureOpenAI
 from jinja2 import Template
 import yaml
 import inspect
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 load_dotenv()
 
@@ -68,13 +69,12 @@ def generate_tool_description(tool):
     return tool_description
 
 
-def call_tool(tool_name, args, allowed_tools):
-    if tool_name not in allowed_tools:
-        raise ValueError(f"Tool {tool_name} is not allowed.")
-    tool = allowed_tools[tool_name]
+def execute_tool(tool, tool_args, allowed_tools):
+    tool_name = tool.__name__
     tool_params = inspect.signature(tool).parameters
-    call_args = {param: args[param] for param in tool_params if param in args}
-    return tool(**call_args)
+    call_args = {param: tool_args[param] for param in tool_params if param in tool_args}
+    result = tool(**call_args)
+    return tool_name, result
 
 
 def parse_markdown_output(output, lang='html'):
@@ -178,22 +178,36 @@ class LlmClient:
         response = client.chat.completions.create(**request_params)
 
         while response.choices[0].finish_reason == "tool_calls":
+            print(f"Calling tools...")
+
             messages.append(response.choices[0].message)
-            for tool_call in response.choices[0].message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
-                print(f"Tool: {tool_name}")
-                print(f"Arguments: {tool_args}")
-                result = call_tool(tool_name, tool_args, allowed_tools)
-                print(f"Result: {result}")
-                messages.append(
-                    {
-                        "tool_call_id": tool_call.id,
-                        "role": "tool",
-                        "name": tool_call.function.name,
-                        "content": str(result),
-                    }
-                )
+
+            with ThreadPoolExecutor() as executor:
+                future_to_tool_call = {
+                    executor.submit(execute_tool, allowed_tools[tool_call.function.name], json.loads(tool_call.function.arguments), allowed_tools): tool_call.id
+                    for tool_call in response.choices[0].message.tool_calls
+                }
+
+                for future in as_completed(future_to_tool_call):
+                    tool_call_id = future_to_tool_call[future]
+                    try:
+                        tool_name, result = future.result()
+                    except Exception as exc:
+                        result = str(exc)
+                        tool_name = "unknown"
+
+                    print(f"Tool: {tool_name}")
+                    print(f"Result: {result}")
+
+                    messages.append(
+                        {
+                            "tool_call_id": tool_call_id,
+                            "role": "tool",
+                            "name": tool_name,
+                            "content": str(result),
+                        }
+                    )
+
             response = client.chat.completions.create(
                 model=self.model.value,
                 messages=messages,
@@ -207,4 +221,3 @@ class LlmClient:
         print(f"Total tokens: {response.usage.total_tokens}")
 
         return response.choices[0].message.content
-

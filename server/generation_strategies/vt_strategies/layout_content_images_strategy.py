@@ -71,11 +71,14 @@ class LayoutAndContentEnhancementStrategy(AbstractGenerationStrategy):
 
         analysis_prompt = f"""
             Analyze the provided HTML content to identify its current layout structure.
-            Based on your analysis, suggest modifications to alter the layout and improve its appearance.
+            Based on your analysis, propose a new layout design with updated content and images.
+            The goal is to do a complete redesign of the layout and content.
             Ensure your recommendations are focused on design concepts rather than specific code changes.
             
             ```Tasks:```
-            - Propose the changes needed to enhance the style, layout, images and content of the HTML.
+            - Propose the detailed plan for the new layout design.
+            - Do NOT include any code or specific HTML elements in your analysis.
+            - List all elements and their positions in the new layout.
             - Make sure to use contrasting colors and appropriate text sizes.
             
             ```Prompt for Analysis:```
@@ -88,25 +91,27 @@ class LayoutAndContentEnhancementStrategy(AbstractGenerationStrategy):
         self.send_progress("Analyzing layout and content...")
         proposed_changes = llm.get_completions(analysis_prompt, [screenshot], temperature=0.0)
 
+        print(proposed_changes)
+
         prompt = f"""
-        You are required to output only the modified HTML content with inline CSS and updated text content.
-        Use style attributes exclusively to adjust the layout.
+        You are required to output only the HTML content with the proposed implementation.
+        Use style attributes exclusively to implement the design changes.
         
         Instructions:
-        - Apply the proposed changes specified below.
-        - Generate a new layout and update the text content for the provided HTML.
-        - Maintain good contrast between text and background colors.
-        - Do NOT use emojis or any other non-HTML elements.
-        - Add decorations like borders, shadows, and hover effects to enhance the design. 
-        - You MUST replace image URLs with generated image URLs formatted as 'hash://<hash_value>'.
-        - Treat all tags of the picture as a single image.
-        - Use very detailed and specific instructions for the image generation.
+        1. Apply the proposed changes specified below.
+        2. Generate a new layout and update the text content for the provided HTML.
+        3. Ensure good contrast between text and background colors.
+        4. Do NOT use emojis or any other non-HTML elements.
+        5. Add decorations such as borders, shadows, and hover effects to enhance the design.
+        6. Replace image URLs with generated image URLs formatted as 'hash://<hash_value>'.
+        7. Treat all tags of a picture as a single image.
+        8. Use detailed and specific instructions for image generation.
+        9. Ensure images are correctly sized and positioned.
+        10. Maintain the original layout size.
+        11. Avoid introducing many new elements in the new layout.
         
-        Proposed Changes:
+        Proposed Implementation:
         {proposed_changes}
-        
-        Original HTML Content:
-        {html}
         """
 
         self.send_progress("Generating new layout and content...")
