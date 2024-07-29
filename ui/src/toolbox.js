@@ -7,12 +7,15 @@ import '@spectrum-web-components/theme/src/themes.js';
 
 import '@spectrum-web-components/field-label/sp-field-label.js';
 import '@spectrum-web-components/button/sp-button.js';
+import '@spectrum-web-components/split-button/sp-split-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import '@spectrum-web-components/combobox/sp-combobox.js';
 import '@spectrum-web-components/textfield/sp-textfield.js';
 
+import './webgl-overlay.js';
+
 import './toolbox.css';
-import {selectElement} from './selection';
+import {selectBlock, selectElement} from './selection';
 import {generateCssSelector} from './dom';
 
 function getUniqueCategories(strategies) {
@@ -76,7 +79,11 @@ export class MystiqueOverlay extends LitElement {
     }
 
     sp-button {
-      width: 100px;
+      width: 150px;
+    }
+
+    sp-split-button {
+      width: 150px;
     }
     
     sp-combobox {
@@ -165,6 +172,13 @@ export class MystiqueOverlay extends LitElement {
   
   async selectBlock() {
     this.style.display = 'none';
+    this.selectedElement = await selectBlock();
+    this.style.display = null;
+    console.debug(generateCssSelector(this.selectedElement));
+  }
+  
+  async selectElement() {
+    this.style.display = 'none';
     this.selectedElement = await selectElement();
     this.style.display = null;
     console.debug(generateCssSelector(this.selectedElement));
@@ -226,7 +240,10 @@ export class MystiqueOverlay extends LitElement {
                 <sp-field-label>Selected element</sp-field-label>
                 <sp-textfield .value=${this.selectedElement ? generateCssSelector(this.selectedElement) : ''} style="width: 100%"></sp-textfield>
               </div>
-              <sp-button variant="primary" @click=${() => this.selectBlock()} ?disabled=${this.busy}>Select</sp-button>
+              <sp-split-button variant="primary" ?disabled=${this.busy}>
+                <sp-menu-item @click=${() => this.selectElement()}>Select Element</sp-menu-item>
+                <sp-menu-item @click=${() => this.selectBlock()}>Select Block</sp-menu-item>
+              </sp-split-button>
             </div>
             <div class="form-panel">
               <div class="generation-controls">

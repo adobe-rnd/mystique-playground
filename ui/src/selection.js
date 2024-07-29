@@ -1,4 +1,4 @@
-export function selectElement() {
+export function selectBlock() {
   return new Promise((resolve) => {
     function addHighlight(event) {
       event.stopPropagation();
@@ -51,5 +51,18 @@ export function selectElement() {
     document.addEventListener('mouseout', removeHighlight, true);
     document.addEventListener('click', handleSelection, true);
     document.addEventListener('keydown', cancelSelection, true);
+  });
+}
+
+export function selectElement() {
+  console.log('Selecting element...');
+  return new Promise((resolve) => {
+    const overlay = document.createElement('webgl-overlay');
+    overlay.onDone = (selectedElement) => {
+      console.log('Selected element1:', selectedElement);
+      resolve(selectedElement);
+      overlay.remove();
+    };
+    document.body.append(overlay);
   });
 }
