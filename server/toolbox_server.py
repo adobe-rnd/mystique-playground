@@ -25,6 +25,8 @@ class ToolboxServer:
         self.setup_routes()
 
     def setup_routes(self):
+        self.app.add_url_rule('/ok', view_func=self.ok, methods=['GET'])
+
         # Toolbox routes
         self.app.add_url_rule('/generate', view_func=self.generate, methods=['GET'])
         self.app.add_url_rule('/getStrategies', view_func=self.get_generation_strategies, methods=['GET'])
@@ -32,6 +34,14 @@ class ToolboxServer:
         # Proxy routes
         self.app.add_url_rule("/", defaults={'path': ''}, view_func=self.proxy, methods=['GET', 'POST'])
         self.app.add_url_rule("/<path:path>", view_func=self.proxy, methods=['GET', 'POST'])
+
+    @staticmethod
+    def ok():
+        try:
+            print("ok")
+            return jsonify({"status": "ok"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
 
     def generate(self):
         selector = request.args.get('selector')

@@ -4,6 +4,8 @@ node_modules/
 venv/
 dist/
 screenshots/
+uploads/
+generated/
 pictures/
 __pycache__/
 *.db

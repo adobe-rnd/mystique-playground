@@ -1,4 +1,5 @@
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   devServer: {
@@ -22,6 +23,7 @@ module.exports = {
   entry: {
     toolbox: './src/toolbox_app.js',
     assistant: './src/assistant_app.js',
+    doc2web: './src/doc2web/main.js',
   },
   output: {
     filename: '[name].js',
@@ -46,9 +48,24 @@ module.exports = {
         test: /\.css$/i,
         use: ["style-loader", "css-loader"],
       },
+      {
+        test: /\.(png|jpg|gif|svg|woff|woff2|eot|ttf|otf)$/i,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[path][name].[ext]',
+            },
+          },
+        ],
+      },
     ]
   },
   plugins: [
-    // Add any plugins you need
+    new HtmlWebpackPlugin({
+      chunksSortMode: 'none',
+      chunks: ['doc2web'],
+      template: 'index.html'
+    }),
   ],
 };

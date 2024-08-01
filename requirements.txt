@@ -14,3 +14,4 @@ requests
 pillow
 bs4
 pyyaml
+mammoth

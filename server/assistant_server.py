@@ -19,9 +19,18 @@ class AssistantServer:
         CORS(self.app)
 
     def _register_routes(self):
+        self.app.add_url_rule('/ok', view_func=self.ok, methods=['GET'])
         self.app.add_url_rule('/assistant', view_func=self.process_assistant_request, methods=['POST'])
         self.app.add_url_rule('/suggest-prompts', view_func=self.suggest_prompts, methods=['POST'])
         self.app.add_url_rule('/autocomplete', view_func=self.autocomplete, methods=['POST'])
+
+    @staticmethod
+    def ok():
+        try:
+            print("ok")
+            return jsonify({"status": "ok"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
 
     def process_assistant_request(self):
         try:
