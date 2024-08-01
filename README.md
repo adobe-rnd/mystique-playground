@@ -50,6 +50,12 @@ source venv/bin/activate
 ./start.sh
 ```
 
+To start `doc2web` use, run the following command:
+```shell
+source venv/bin/activate
+./doc2web.sh
+```
+
 ## Running tests
 
 To run the tests, execute the following command:
