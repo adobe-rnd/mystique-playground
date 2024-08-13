@@ -3,11 +3,11 @@ import datetime
 import hashlib
 import os
 
-from server.dalle import DalleClient
+from server.shared.dalle import DalleClient
 from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCategory
-from server.html_utils import convert_hashes_to_urls
-from server.llm import LlmClient, ModelType, parse_markdown_output
-from server.scraper import WebScraper
+from server.shared.html_utils import convert_hashes_to_urls
+from server.shared.llm import LlmClient, ModelType, parse_markdown_output
+from server.shared.scraper import WebScraper
 
 
 def make_image_generator(dalle, url_mapping):

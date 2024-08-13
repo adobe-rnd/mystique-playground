@@ -10,9 +10,10 @@ from flask import Flask, Response, request, jsonify, make_response, send_from_di
 
 from flask_cors import CORS
 
-from server.llm import LlmClient, ModelType, parse_markdown_output
+from server.shared.llm import LlmClient, ModelType, parse_markdown_output
 
-class AssistantServer:
+
+class CopilotServer:
     def __init__(self):
         self.app = Flask(__name__)
         self._register_routes()
@@ -20,7 +21,7 @@ class AssistantServer:
 
     def _register_routes(self):
         self.app.add_url_rule('/ok', view_func=self.ok, methods=['GET'])
-        self.app.add_url_rule('/assistant', view_func=self.process_assistant_request, methods=['POST'])
+        self.app.add_url_rule('/copilot', view_func=self.process_copilot_request, methods=['POST'])
         self.app.add_url_rule('/suggest-prompts', view_func=self.suggest_prompts, methods=['POST'])
         self.app.add_url_rule('/autocomplete', view_func=self.autocomplete, methods=['POST'])
 
@@ -32,7 +33,7 @@ class AssistantServer:
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
-    def process_assistant_request(self):
+    def process_copilot_request(self):
         try:
             data = request.get_json()
 

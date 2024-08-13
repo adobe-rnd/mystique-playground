@@ -11,8 +11,8 @@ import '@spectrum-web-components/theme/src/themes.js';
 import '@spectrum-web-components/styles/scale-medium.css';
 import '@spectrum-web-components/styles/typography.css';
 
-@customElement('assistant-root')
-export class AssistantRoot extends LitElement {
+@customElement('copilot-root')
+export class CopilotRoot extends LitElement {
   render() {
     return html`
       <sp-theme theme="spectrum" color="light" scale="medium">

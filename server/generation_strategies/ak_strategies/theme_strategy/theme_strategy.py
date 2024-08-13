@@ -1,9 +1,9 @@
 import os
 
 from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCategory
-from server.llm import create_prompt_from_template, parse_css, LlmClient
-from server.scraper import WebScraper
-from server.image import image_to_bytes
+from server.shared.llm import create_prompt_from_template, parse_css, LlmClient
+from server.shared.scraper import WebScraper
+from server.shared.image import image_to_bytes
 
 
 class AKGenerationStrategy(AbstractGenerationStrategy):

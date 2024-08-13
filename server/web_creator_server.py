@@ -16,9 +16,9 @@ import asyncio
 import signal
 import sys
 
-from server.file_utils import handle_file_upload
-from server.llm import LlmClient, ModelType, parse_markdown_output
-from server.scraper import WebScraper
+from server.shared.file_utils import handle_file_upload
+from server.shared.llm import LlmClient, ModelType, parse_markdown_output
+from server.shared.scraper import WebScraper
 
 from server.component_templates import html_structure, css_variables, generate_css
 
@@ -33,7 +33,8 @@ class JobStatus(Enum):
 UPLOAD_FOLDER = 'uploads'
 GENERATED_FOLDER = 'generated'
 
-class Doc2Web:
+
+class WebCreator:
     def __init__(self):
         self.app = Flask(__name__)
         self.app.secret_key = os.urandom(24)

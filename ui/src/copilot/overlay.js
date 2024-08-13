@@ -5,7 +5,7 @@ import {
   calculateDistance,
   getIntersectedElements,
   getSmallestEnclosingElement, optimizePath
-} from './utils';
+} from '../utils';
 import {MobxLitElement} from '@adobe/lit-mobx';
 import {appSettings}from './settings';
 import {authoringSession} from './session';

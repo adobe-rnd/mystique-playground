@@ -1,5 +1,5 @@
 import unittest
-from server.html_utils import convert_urls_to_hashes, convert_hashes_to_urls, compute_unique_hash
+from server.shared.html_utils import convert_urls_to_hashes, convert_hashes_to_urls, compute_unique_hash
 import base64
 
 

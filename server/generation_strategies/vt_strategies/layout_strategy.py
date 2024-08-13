@@ -1,7 +1,6 @@
 from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCategory
-from server.image import downscale_image
-from server.llm import LlmClient, ModelType, parse_markdown_output
-from server.scraper import WebScraper
+from server.shared.llm import LlmClient, ModelType, parse_markdown_output
+from server.shared.scraper import WebScraper
 
 
 class LayoutEnhancementStrategy(AbstractGenerationStrategy):

@@ -4,7 +4,7 @@ import os
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 
-from server.image import load_image, image_to_data_url
+from server.shared.image import load_image, image_to_data_url
 
 load_dotenv()
 

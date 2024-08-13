@@ -1,8 +1,8 @@
 import os
 
 from server.generation_strategies.base_strategy import AbstractGenerationStrategy, StrategyCategory
-from server.llm import create_prompt_from_template, parse_markdown_output, LlmClient
-from server.scraper import WebScraper
+from server.shared.llm import create_prompt_from_template, parse_markdown_output, LlmClient
+from server.shared.scraper import WebScraper
 
 
 class CssGenerationStrategy(AbstractGenerationStrategy):

@@ -21,9 +21,9 @@ module.exports = {
   mode: 'development',
   devtool: 'source-map',
   entry: {
-    toolbox: './src/toolbox_app.js',
-    assistant: './src/assistant_app.js',
-    doc2web: './src/doc2web/main.js',
+    playground: './src/playground/main.js',
+    copilot: './src/copilot/main.js',
+    creator: './src/creator/main.js',
   },
   output: {
     filename: '[name].js',
@@ -63,9 +63,18 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      chunksSortMode: 'none',
-      chunks: ['doc2web'],
-      template: 'index.html'
+      chunks: ['creator'],
+      templateContent: `
+        <html lang="">
+          <head>
+            <meta charset="utf-8">
+            <title>Mystique Web Creator</title>
+          </head>
+          <body>
+            <web-creator-component></web-creator-component>
+          </body>
+        </html>
+      `,
     }),
   ],
 };

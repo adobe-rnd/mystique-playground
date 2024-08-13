@@ -14,9 +14,9 @@ import '@spectrum-web-components/textfield/sp-textfield.js';
 
 import './webgl-overlay.js';
 
-import './toolbox.css';
+import './playground.css';
 import {selectBlock, selectElement} from './selection';
-import {generateCssSelector} from './dom';
+import {generateCssSelector} from '../dom';
 
 function getUniqueCategories(strategies) {
   return strategies.reduce((acc, strategy) => {
@@ -27,8 +27,8 @@ function getUniqueCategories(strategies) {
   }, []);
 }
 
-@customElement('mystique-overlay')
-export class MystiqueOverlay extends LitElement {
+@customElement('mystique-playground')
+export class MystiquePlayground extends LitElement {
   
   static styles = css`
     .container {
@@ -36,18 +36,31 @@ export class MystiqueOverlay extends LitElement {
       flex-direction: column;
       gap: 10px;
       align-items: start;
-      transform: translate(-50%, 0);
       width: 100%;
       max-width: 800px;
-      position: fixed;
-      bottom: 25px;
+      position: fixed; /* Always fixed to keep it from scrolling with the page */
+      bottom: 25px; /* Initially anchored at the bottom */
       left: 50%;
+      transform: translateX(-50%); /* Centered horizontally */
       z-index: 1000;
       background-color: rgba(255, 255, 255, 1);
       box-shadow: 0 0 10px 10px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(0, 0, 0, 0.3);
       border-radius: 5px;
-      padding: 20px;
+      padding: 15px;
+      cursor: default;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+      background-color: rgba(0, 0, 0, 0.1);
+      padding: 5px 10px;
+      border-radius: 5px;
+      width: 100%;
+      box-sizing: border-box;
+      cursor: move;
+      user-select: none;
     }
 
     .block-selection-panel {
@@ -73,6 +86,13 @@ export class MystiqueOverlay extends LitElement {
       width: 100%;
     }
 
+    .generation-controls {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+    
     .field-container {
       display: flex;
       flex-direction: column;
@@ -115,13 +135,6 @@ export class MystiqueOverlay extends LitElement {
       width: 70%;
       text-overflow: ellipsis;
     }
-
-    .generation-controls {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 10px;
-    }
   `;
 
   @state() accessor strategies = [];
@@ -137,6 +150,41 @@ export class MystiqueOverlay extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
     await this.fetchStrategies();
+    this.addDragListeners();
+  }
+  
+  firstUpdated() {
+    const titleElement = this.shadowRoot.querySelector('.title');
+    const containerElement = this.shadowRoot.querySelector('.container');
+    
+    let offsetX = 0;
+    let offsetY = 0;
+    let isDragging = false;
+    
+    titleElement.addEventListener('mousedown', (event) => {
+      const rect = containerElement.getBoundingClientRect();
+      offsetX = event.clientX - rect.left;
+      offsetY = event.clientY - rect.top;
+      isDragging = true;
+      
+      // Keep position fixed, but update left and top values to start dragging
+      containerElement.style.left = `${rect.left}px`;
+      containerElement.style.top = `${rect.top}px`;
+      containerElement.style.transform = 'none'; // Disable initial centering transform
+      containerElement.style.bottom = 'auto'; // Remove bottom constraint for upward movement
+      containerElement.style.margin = '0'; // Ensure no margin is affecting position
+    });
+    
+    document.addEventListener('mousemove', (event) => {
+      if (isDragging) {
+        containerElement.style.left = `${event.clientX - offsetX}px`;
+        containerElement.style.top = `${event.clientY - offsetY}px`;
+      }
+    });
+    
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
   }
   
   async fetchStrategies() {
@@ -235,6 +283,9 @@ export class MystiqueOverlay extends LitElement {
     return html`
         <sp-theme theme="spectrum" color="light" scale="medium">
           <div class="container">
+            <div class="title">
+              Mystique Playground
+            </div>
             <div class="block-selection-panel">
               <div class="field-container" style="flex-grow: 1">
                 <sp-field-label>Selected element</sp-field-label>

@@ -3,7 +3,7 @@ from io import BytesIO
 
 from playwright.async_api import async_playwright
 
-from server.image import downscale_image, image_to_bytes
+from server.shared.image import downscale_image, image_to_bytes
 
 
 class WebScraper:

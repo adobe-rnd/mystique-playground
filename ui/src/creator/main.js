@@ -5,6 +5,7 @@ import wretch from 'wretch';
 import '@spectrum-web-components/theme/sp-theme.js';
 import '@spectrum-web-components/theme/src/themes.js';
 import '@spectrum-web-components/textfield/sp-textfield.js';
+import '@spectrum-web-components/combobox/sp-combobox.js';
 import '@spectrum-web-components/field-label/sp-field-label.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/dropzone/sp-dropzone.js';
@@ -15,7 +16,7 @@ import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import logo from './logo.png';
 import dropzoneIcon from './dropzone-icon.svg';
 
-@customElement('my-first-component')
+@customElement('web-creator-component')
 class MyFirstComponent extends LitElement {
   
   static styles = css`
@@ -148,6 +149,9 @@ class MyFirstComponent extends LitElement {
     .inputs-container sp-textfield {
       width: 100%;
     }
+    .inputs-container sp-combobox {
+      width: 100%;
+    }
     .inputs-container sp-textfield textarea {
       height: 100px;
     }
@@ -193,12 +197,13 @@ class MyFirstComponent extends LitElement {
     }
   `;
   
-  @state() accessor intent = 'No intent provided.';
   @state() accessor files = [];
+  @state() accessor websiteUrl = '';
+  @state() accessor recipe = 'Standard';
+  @state() accessor intent = 'No intent provided.';
   @state() accessor statuses = [];
   @state() accessor jobId = '';
   @state() accessor jobStatus = null;
-  @state() accessor websiteUrl = '';
   
   intentChanged(event) {
     this.intent = event.target.value;
@@ -239,6 +244,10 @@ class MyFirstComponent extends LitElement {
     event.stopPropagation();
     this.files = this.files.filter((_, i) => i !== index);
     this.clearFileInput();
+  }
+  
+  handleRecipeChange(event) {
+    this.recipe = event.target.value
   }
   
   handleUrlChange(event) {
@@ -336,8 +345,8 @@ class MyFirstComponent extends LitElement {
         <div class="main-container">
           <div class="header">
             <img src="${logo}" alt="Logo" height="200">
-            <div class="title">Doc <strong>2</strong> Web</div>
-            <div class="subtitle">Instantly transform <strong>your ideas</strong> into <strong>landing pages</strong></div>
+            <div class="title">Mystique <strong>Web Creator</strong></div>
+            <div class="subtitle">Instantly convert <strong>your ideas</strong> into fully-fledged <strong>web pages</strong></div>
           </div>
           <div class="documents-container">
             <div class="section-title">Step 1: Upload Your Documents</div>
@@ -383,14 +392,21 @@ class MyFirstComponent extends LitElement {
             </sp-textfield>
           </div>
           <div class="inputs-container">
-            <div class="section-title">Step 3: (Optional) Define Your Intent</div>
+            <div class="section-title">Step 3: Choose The Cooking Recipe</div>
+            <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
+            <sp-combobox placeholder="Select a recipe" .value=${this.recipe} @input="${this.handleRecipeChange}">
+              <sp-menu-item value="standard">Standard</sp-menu-item>
+            </sp-combobox>
+          </div>
+          <div class="inputs-container">
+            <div class="section-title">Step 4: (Optional) Define Your Intent</div>
             <div class="section-description">Optionally, you can describe the purpose and goals of your new webpage to help guide the design and content generation process.</div>
             <sp-textfield multiline placeholder="Enter your intent" .value=${this.intent} @input="${this.intentChanged}">
               <sp-field-label slot="label">Intent</sp-field-label>
             </sp-textfield>
           </div>
           <div class="results-container ${this.jobStatus === null ? 'hidden-element' : ''}">
-            <div class="section-title">Step 4: Relax and Wait for the Magic to Happen</div>
+            <div class="section-title">Step 5: Relax and Wait for the Magic to Happen</div>
             <div class="section-description">Monitor the progress of your job and preview the generated markup for your new landing page.</div>
             <div class="status-list">
               ${this.statuses.map((status, index) => html`
@@ -405,7 +421,7 @@ class MyFirstComponent extends LitElement {
           </div>
           <div class="buttons-container">
             <sp-button variant="primary" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Generate</sp-button>
-            <sp-button variant="secondary" @click="${this.previewMarkup}" ?disabled="${this.jobStatus !== 'completed'}">Preview</sp-button>
+            <sp-button variant="accent" @click="${this.previewMarkup}" ?disabled="${this.jobStatus !== 'completed'}">Preview</sp-button>
           </div>
         </div>
       </sp-theme>

@@ -4,7 +4,7 @@ import { css, html, LitElement } from 'lit';
 import {
   calculateDistance, getIntersectedElements, getSmallestEnclosingElement,
   optimizePath
-} from './utils';
+} from '../utils';
 import { mat4 } from 'gl-matrix';
 
 const DASH_ANIMATION_SPEED = 25;

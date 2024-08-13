@@ -1,18 +1,18 @@
 import argparse
 import time
 
-from server.toolbox_server import ToolboxServer
+from server.playground_server import PlaygroundServer
 
 
 def main(url):
-    print("Starting Toolbox...")
-    toolbox_server = ToolboxServer(url)
+    print("Starting Playground...")
+    playground_server = PlaygroundServer(url)
     print(f"Proxying {url} at http://localhost:4000?t={int(time.time())}")
-    toolbox_server.run(host='0.0.0.0', port=4000)
+    playground_server.run(host='0.0.0.0', port=4000)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Start the Toolbox server")
+    parser = argparse.ArgumentParser(description="Start the Playground server")
     parser.add_argument('--url', type=str, required=True, help='URL of the website')
     args = parser.parse_args()
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Mystique GenAI Assistant",
+  "name": "Mystique Copilot",
   "version": "0.1",
-  "description": "Mystique GenAI Assistant",
+  "description": "Mystique Copilot",
   "permissions": ["activeTab", "scripting"],
   "background": {
     "service_worker": "./background.js"

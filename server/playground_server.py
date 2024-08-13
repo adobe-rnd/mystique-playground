@@ -6,20 +6,20 @@ import asyncio
 import threading
 import queue
 
-from server.db import JsCodeInjections
+from server.playground_db import PlaygroundDatabase
 from server.generation_strategies.base_strategy import Action, StatusMessage
-from server.strategy_loader import load_generation_strategies
+from server.playground_strategy_loader import load_generation_strategies
 
-DASHBOARD_URL = "http://localhost:4010/toolbox.js"
+DASHBOARD_URL = "http://localhost:4010/playground.js"
 
 
-class ToolboxServer:
+class PlaygroundServer:
     def __init__(self, url):
         self.url = url
         self.app = Flask(__name__)
         CORS(self.app)
 
-        self.injections = JsCodeInjections()
+        self.injections = PlaygroundDatabase()
         self.generation_strategies = load_generation_strategies()
 
         self.setup_routes()

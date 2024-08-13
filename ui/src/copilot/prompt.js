@@ -5,7 +5,7 @@ import {
   captureScreenshot,
   getIntersectedElements,
   getSmallestEnclosingElement
-} from './utils';
+} from '../utils';
 import wretch from 'wretch';
 import { throttle } from 'lodash';
 import '@spectrum-web-components/action-button/sp-action-button.js';
@@ -18,7 +18,7 @@ import { authoringSession } from './session';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { appSettings } from './settings';
 import { reaction } from 'mobx';
-import {generateCssSelector, getElementHtml} from './dom';
+import {generateCssSelector, getElementHtml} from '../dom';
 
 function getSuggestedPrompt(prompt, suggestion, numberOfWords) {
   const suggestions = suggestion ? suggestion.split(' ').slice(0, numberOfWords) : [];
@@ -265,7 +265,7 @@ export class PromptComponent extends MobxLitElement {
       console.log('Selection HTML:', selectionHtmls.map(html => html.length).join(', '));
       console.log('Screenshot size:', screenshotUint8Array.length);
       
-      const response = await wretch('http://localhost:4001/assistant')
+      const response = await wretch('http://localhost:4001/copilot')
         .post({
           context: contextHtml,
           selection: selectionHtmls,
@@ -436,7 +436,7 @@ export class PromptComponent extends MobxLitElement {
   }
   
   handleCloseButtonClick() {
-    window.dispatchEvent(new CustomEvent('toggleAssistant'));
+    window.dispatchEvent(new CustomEvent('toggleCopilot'));
     authoringSession.setPrompt('');
     authoringSession.setSelectedRegions([]);
   }

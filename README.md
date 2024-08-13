@@ -36,24 +36,24 @@ A playground and toolkit for the Mystique project.
 
 ## Running the Application
 
-To start the proxy server and the UI, run the following command:
+To start the `Playground` tool, run the following command:
 
 ```shell
 source venv/bin/activate
 ./start.sh https://main--wknd--hlxsites.hlx.page/
 ```
 
-Alternatively, to use the Chrome extension or Sidekick, run the following command:
+To use the `Copilot` tool, run the following command:
 
 ```shell
 source venv/bin/activate
 ./start.sh
 ```
 
-To start `doc2web` use, run the following command:
+To start the `Web Creator` tool, run the following command:
 ```shell
 source venv/bin/activate
-./doc2web.sh
+./creator.sh
 ```
 
 ## Running tests
@@ -65,7 +65,7 @@ source venv/bin/activate
 python -m unittest discover -s server/tests
 ```
 
-## Adding a New Generation Strategy
+## Adding a New Generation Strategy to the Playground
 
 To create a new generation strategy, follow these steps:
 

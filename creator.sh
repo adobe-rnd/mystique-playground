@@ -50,7 +50,7 @@ source venv/bin/activate
 WEBPACK_PID=$!
 
 # Start the server in the background
-python -m server.start_d2w_server &
+python -m server.start_web_creator_server &
 SERVER_PID=$!
 
 # Function to check if the server is running on port 4003
