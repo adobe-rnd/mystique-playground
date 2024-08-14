@@ -8,6 +8,8 @@ A playground and toolkit for the Mystique project.
    ```shell
    echo "AZURE_OPENAI_API_KEY=..." > .env
    echo "AZURE_OPENAI_ENDPOINT=https://openai-west-us-tsaplin.openai.azure.com/" >> .env
+   echo "AZURE_OPENAI_DALLE_API_KEY=..." >> .env
+   echo "AZURE_OPENAI_DALLE_ENDPOINT=https://openai-east-us-tsaplin.openai.azure.com/" >> .env
    ```
 
 1. Create a virtual environment:
@@ -15,11 +17,6 @@ A playground and toolkit for the Mystique project.
     python3 -m venv venv
     source venv/bin/activate
     ```
-
-1. Activate the virtual environment:
-   ```shell
-   source venv/bin/activate
-   ```
 
 1. Install the required packages:
     ```shell

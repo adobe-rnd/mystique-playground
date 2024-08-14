@@ -8,7 +8,7 @@ uploads/
 generated/
 pictures/
 __pycache__/
-*.db
 .env
-*.html
-*.css
+*.db
+/*.html
+/*.css
