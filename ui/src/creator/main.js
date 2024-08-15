@@ -385,25 +385,25 @@ class MyFirstComponent extends LitElement {
             </div>
           </div>
           <div class="inputs-container">
-            <div class="section-title">Step 2: Provide a Reference URL</div>
+            <div class="section-title">Step 2: Define Your Intent</div>
+            <div class="section-description">Describe the purpose and goals of your new webpage to help guide the design and content generation process.</div>
+            <sp-textfield multiline placeholder="Enter your intent" .value=${this.intent} @input="${this.intentChanged}">
+              <sp-field-label slot="label">Intent</sp-field-label>
+            </sp-textfield>
+          </div>
+          <div class="inputs-container">
+            <div class="section-title">Step 3: Provide a Reference Website URL to Copy the Design</div>
             <div class="section-description">Enter the URL of a website that you would like to emulate. We will use this site as a design reference to create a visually similar landing page.</div>
             <sp-textfield placeholder="Enter website URL" .value=${this.websiteUrl} @input="${this.handleUrlChange}">
               <sp-field-label slot="label">Website URL</sp-field-label>
             </sp-textfield>
           </div>
           <div class="inputs-container">
-            <div class="section-title">Step 3: Choose The Cooking Recipe</div>
+            <div class="section-title">Step 4: Choose the Cooking Recipe</div>
             <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
             <sp-combobox placeholder="Select a recipe" .value=${this.recipe} @input="${this.handleRecipeChange}">
               <sp-menu-item value="standard">Standard</sp-menu-item>
             </sp-combobox>
-          </div>
-          <div class="inputs-container">
-            <div class="section-title">Step 4: (Optional) Define Your Intent</div>
-            <div class="section-description">Optionally, you can describe the purpose and goals of your new webpage to help guide the design and content generation process.</div>
-            <sp-textfield multiline placeholder="Enter your intent" .value=${this.intent} @input="${this.intentChanged}">
-              <sp-field-label slot="label">Intent</sp-field-label>
-            </sp-textfield>
           </div>
           <div class="results-container ${this.jobStatus === null ? 'hidden-element' : ''}">
             <div class="section-title">Step 5: Relax and Wait for the Magic to Happen</div>
@@ -420,8 +420,8 @@ class MyFirstComponent extends LitElement {
             </div>
           </div>
           <div class="buttons-container">
-            <sp-button variant="primary" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Generate</sp-button>
-            <sp-button variant="accent" @click="${this.previewMarkup}" ?disabled="${this.jobStatus !== 'completed'}">Preview</sp-button>
+            <sp-button variant="primary" size="L" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Generate</sp-button>
+            <sp-button variant="accent" size="L" @click="${this.previewMarkup}" ?disabled="${this.jobStatus !== 'completed'}">Preview</sp-button>
           </div>
         </div>
       </sp-theme>
