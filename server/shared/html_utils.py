@@ -51,3 +51,14 @@ def convert_hashes_to_urls(compressed_html, url_mapping):
                 original_url = reconstruct_url(value)
                 tag[attr] = original_url
     return str(soup)
+
+
+def insert_css_into_html(html_string, css_strings):
+    if isinstance(css_strings, str):
+        css_strings = [css_strings]
+    combined_css = "\n".join([f"<style>{css}</style>" for css in css_strings])
+    if "<head>" in html_string:
+        updated_html = html_string.replace("</head>", f"{combined_css}\n</head>")
+    else:
+        updated_html = f"<head>{combined_css}</head>\n{html_string}"
+    return updated_html
