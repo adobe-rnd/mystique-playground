@@ -16,3 +16,4 @@ bs4
 pyyaml
 mammoth
 python-docx
+jsonschema

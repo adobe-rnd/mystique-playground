@@ -1,6 +1,6 @@
 import json
 
-from server.generation_recipes.css_styles import generate_css_vars, css_variables
+from server.generation_recipes.generate_css_vars import generate_css_vars, css_variables
 from server.shared.llm import parse_markdown_output, LlmClient, ModelType
 
 

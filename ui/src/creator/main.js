@@ -16,6 +16,11 @@ import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 import logo from './logo.png';
 import dropzoneIcon from './dropzone-icon.svg';
 
+const DEFAULT_INTENT = [
+  'I want to create a landing page for my new business',
+  'This page will be used to promote a new service',
+  'Also, I want to collect leads from this page'].join('\n');
+
 @customElement('web-creator-component')
 class MyFirstComponent extends LitElement {
   
@@ -200,7 +205,7 @@ class MyFirstComponent extends LitElement {
   @state() accessor files = [];
   @state() accessor websiteUrl = '';
   @state() accessor recipe = 'Standard';
-  @state() accessor intent = 'No intent provided.';
+  @state() accessor intent = DEFAULT_INTENT;
   @state() accessor statuses = [];
   @state() accessor jobId = '';
   @state() accessor jobStatus = null;
@@ -359,7 +364,7 @@ class MyFirstComponent extends LitElement {
                       @drop=${this.handleDrop}
               >
                 <sp-illustrated-message heading="Drag and Drop Your Files">
-                  <img src="${dropzoneIcon}" alt="Dropzone Icon" width="120">
+                  <img src="${dropzoneIcon}" alt="Dropzone Icon" width="100">
                 </sp-illustrated-message>
                 <div>
                   <label for="file-input">
@@ -385,9 +390,9 @@ class MyFirstComponent extends LitElement {
             </div>
           </div>
           <div class="inputs-container">
-            <div class="section-title">Step 2: Define Your Intent</div>
+            <div class="section-title">Step 2: Describe Your Intent</div>
             <div class="section-description">Describe the purpose and goals of your new webpage to help guide the design and content generation process.</div>
-            <sp-textfield multiline placeholder="Enter your intent" .value=${this.intent} @input="${this.intentChanged}">
+            <sp-textfield multiline rows=5 placeholder="Enter your intent" .value=${this.intent} @input="${this.intentChanged}">
               <sp-field-label slot="label">Intent</sp-field-label>
             </sp-textfield>
           </div>
@@ -398,7 +403,7 @@ class MyFirstComponent extends LitElement {
               <sp-field-label slot="label">Website URL</sp-field-label>
             </sp-textfield>
           </div>
-          <div class="inputs-container">
+          <div class="inputs-container" style="display: none">
             <div class="section-title">Step 4: Choose the Cooking Recipe</div>
             <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
             <sp-combobox placeholder="Select a recipe" .value=${this.recipe} @input="${this.handleRecipeChange}">
@@ -406,7 +411,7 @@ class MyFirstComponent extends LitElement {
             </sp-combobox>
           </div>
           <div class="results-container ${this.jobStatus === null ? 'hidden-element' : ''}">
-            <div class="section-title">Step 5: Relax and Wait for the Magic to Happen</div>
+            <div class="section-title">Relax and Wait for the Magic to Happen</div>
             <div class="section-description">Monitor the progress of your job and preview the generated markup for your new landing page.</div>
             <div class="status-list">
               ${this.statuses.map((status, index) => html`

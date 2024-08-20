@@ -24,6 +24,7 @@ client = AzureOpenAI(
 
 class ModelType(Enum):
     GPT_4_OMNI = "gpt-4o"
+    GPT_4_OMNI_MINI = "gpt-4o-mini"
     GPT_4_VISION = "gpt-4v"
     GPT_35_TURBO = "gpt-35-turbo"
 
@@ -107,7 +108,7 @@ class LlmClient:
         self.model = model
         self.system_prompt = system_prompt
 
-    def get_completions(self, prompt, image_list=None, max_tokens=4096, temperature=1.0, json_output=False, tools=None):
+    def get_completions(self, prompt, image_list=None, max_tokens=4096, temperature=1.0, json_output=False, json_schema=None, tools=None):
         messages = []
         allowed_tools = {}
 
@@ -168,7 +169,12 @@ class LlmClient:
         }
 
         if json_output:
-            request_params["response_format"] = {"type": "json_object"}
+            if json_schema:
+                print("Using JSON schema")
+                request_params["response_format"] = {"type": "json_schema", "json_schema": json_schema, "strict": True }
+            else:
+                print("Using JSON object")
+                request_params["response_format"] = {"type": "json_object"}
 
         if tools:
             tool_descriptions = [generate_tool_description(tool) for tool in tools] if tools else []

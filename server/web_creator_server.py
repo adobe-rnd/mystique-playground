@@ -1,7 +1,7 @@
 import json
 import time
 
-from flask import Flask, jsonify, request, Response, send_from_directory
+from flask import Flask, jsonify, request, Response, Blueprint, send_from_directory
 import os
 
 from flask_cors import CORS
@@ -15,7 +15,8 @@ GENERATED_FOLDER = 'generated'
 
 class WebCreator:
     def __init__(self):
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, static_folder='./generation_recipes/components', static_url_path='/static')
+        self.app.register_blueprint(Blueprint('generated', __name__, static_folder='../generated'))
         self.job_manager = JobManager()
         self.register_routes()
         CORS(self.app)
@@ -72,7 +73,7 @@ class WebCreator:
     def preview_markup(self, job_id):
         try:
             folder_name = job_id
-            file_name = "markup.html"
+            file_name = "index.html"
             folder_path = os.path.join(GENERATED_FOLDER, folder_name)
 
             if not os.path.exists(os.path.join(folder_path, file_name)):

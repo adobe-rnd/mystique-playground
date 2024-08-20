@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hero",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "hero"
+    },
+    "heading": {
+      "type": "string",
+      "description": "The main heading of the hero block."
+    },
+    "subheading": {
+      "type": "string",
+      "description": "The subheading or description text."
+    },
+    "image": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "image.json" },
+        {
+          "properties": {
+            "appearance": {
+              "type": "object",
+              "properties": {
+                "position": {
+                  "type": "string",
+                  "enum": ["left", "center", "right"],
+                  "description": "The position of the image relative to the content."
+                },
+                "overlay": {
+                  "type": "boolean",
+                  "description": "Whether or not to overlay the image over the content."
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "The hero-specific image with additional properties."
+    },
+    "buttons": {
+      "type": "array",
+      "description": "An array of buttons that can be used as CTAs.",
+      "items": {
+        "$ref": "button.json"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "alignment": {
+      "type": "string",
+      "enum": ["left", "center", "right"],
+      "description": "The text alignment for the content."
+    },
+    "layout": {
+      "type": "string",
+      "enum": ["stacked", "inline"],
+      "description": "Layout type for the content relative to the image."
+    }
+  },
+  "required": ["heading", "image", "alignment", "layout"]
+}

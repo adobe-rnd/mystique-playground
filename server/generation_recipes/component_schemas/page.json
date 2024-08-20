@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "page",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "page"
+    },
+    "header": {
+      "$ref": "header.json",
+      "description": "The header section of the page."
+    },
+    "sections": {
+      "type": "array",
+      "description": "An array of sections that make up the main content of the page.",
+      "items": {
+        "$ref": "section.json"
+      },
+      "minItems": 0
+    },
+    "footer": {
+      "$ref": "footer.json",
+      "description": "The footer section of the page."
+    }
+  },
+  "required": ["header", "footer"]
+}

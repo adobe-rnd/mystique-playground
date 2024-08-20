@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "card",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "card"
+    },
+    "image": {
+      "$ref": "image.json",
+      "description": "The image at the top of the card."
+    },
+    "title": {
+      "type": "string",
+      "description": "The title of the card."
+    },
+    "description": {
+      "type": "string",
+      "description": "The description or body text of the card."
+    },
+    "buttons": {
+      "type": "array",
+      "description": "An array of buttons for actions related to the card.",
+      "items": {
+        "$ref": "button.json"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "layout": {
+      "type": "string",
+      "enum": ["stacked", "inline"],
+      "description": "The layout of the card's content."
+    },
+    "alignment": {
+      "type": "string",
+      "enum": ["left", "center", "right"],
+      "description": "The alignment of the card content."
+    }
+  },
+  "required": ["title"]
+}

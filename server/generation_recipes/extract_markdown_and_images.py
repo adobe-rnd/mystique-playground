@@ -21,7 +21,7 @@ def extract_images_from_docx(docx_file_path: str) -> Dict[str, str]:
             # Create a proper data URL
             data_url = f"data:{content_type};base64,{encoded_image}"
             # Generate a hash for the image and store it
-            url_hash = f"hash://{hashlib.md5(data_url.encode()).hexdigest()}"
+            url_hash = hashlib.md5(data_url.encode()).hexdigest()
             image_hash_map[url_hash] = data_url
 
     return image_hash_map

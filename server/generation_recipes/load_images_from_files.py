@@ -23,7 +23,7 @@ def load_images_from_files(file_paths: List[str]) -> Dict[str, str]:
 
                 data_url = f"data:image/{img_format};base64,{encoded_image}"
 
-                url_hash = f"hash://{hashlib.md5(encoded_image.encode()).hexdigest()}"
+                url_hash = hashlib.md5(data_url.encode()).hexdigest()
 
                 hash_map[url_hash] = data_url
 

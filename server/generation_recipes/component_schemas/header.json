@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "header",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "header"
+    },
+    "logo": {
+      "$ref": "image.json",
+      "description": "The logo image in the header."
+    },
+    "navigation": {
+      "type": "array",
+      "description": "An array of navigation links.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The text of the navigation link."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The URL the navigation link points to."
+          }
+        },
+        "required": ["text", "url"]
+      }
+    },
+    "alignment": {
+      "type": "string",
+      "enum": ["left", "center", "right"],
+      "description": "The alignment of the header content."
+    }
+  },
+  "required": ["logo", "navigation"]
+}

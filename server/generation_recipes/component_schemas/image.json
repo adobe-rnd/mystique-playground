@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "image",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "image"
+    },
+    "src": {
+      "type": "string",
+      "format": "uri",
+      "description": "The URL source of the image."
+    },
+    "alt": {
+      "type": "string",
+      "description": "The alt text for the image."
+    }
+  },
+  "required": ["src", "alt"]
+}

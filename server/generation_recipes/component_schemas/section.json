@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "section",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "const": "section"
+    },
+    "children": {
+      "type": "array",
+      "description": "An array of content blocks within the section.",
+      "items": {
+        "type": "object",
+        "description": "The actual data for the content, structured according to the type. References can be used for reusable components like images or buttons.",
+        "oneOf": [
+          {
+            "$ref": "hero.json"
+          },
+          {
+            "$ref": "card.json"
+          }
+        ]
+      }
+    },
+    "spacing": {
+      "type": "string",
+      "enum": ["none", "small", "medium", "large"],
+      "description": "The spacing between items in the section."
+    },
+    "columns": {
+      "type": "integer",
+      "enum": [1, 2, 3],
+      "description": "The number of columns to display the content in."
+    }
+  },
+  "required": ["children"]
+}
