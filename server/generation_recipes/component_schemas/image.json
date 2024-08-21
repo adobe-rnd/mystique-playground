@@ -4,11 +4,15 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "image"
+    },
+    "imageUrl": {
+      "type": "string",
+      "description": "The URL source of the image."
     },
     "src": {
       "type": "string",
-      "format": "uri",
       "description": "The URL source of the image."
     },
     "alt": {
@@ -16,5 +20,6 @@
       "description": "The alt text for the image."
     }
   },
-  "required": ["src", "alt"]
+  "required": ["kind", "imageUrl", "src", "alt"],
+  "additionalProperties": false
 }

@@ -1,5 +1,4 @@
-import {ButtonComponent} from './button.js';
-
+import { ButtonComponent } from './button.js';
 
 export class HeroComponent extends HTMLElement {
   constructor() {
@@ -14,151 +13,79 @@ export class HeroComponent extends HTMLElement {
   render() {
     const background = this.getAttribute('background') || '';
     const alignment = this.getAttribute('alignment') || 'center';
+    const layout = this.getAttribute('layout') || 'stacked';
+    const imagePosition = this.getAttribute('imagePosition') || 'center';
+    
+    const heading = this.getAttribute('heading') || '';
+    const subheading = this.getAttribute('subheading') || '';
+    const buttons = JSON.parse(this.getAttribute('buttons') || '[]');
     
     this.shadowRoot.innerHTML = `
       <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
         .hero-container {
+          padding: var(--brand-padding-large, 40px);
+          background: url('${background}') ${imagePosition} / cover, var(--brand-soft-background, #f0f0f0);
+          border-radius: var(--brand-border-radius, 8px);
           display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: ${alignment};
+          flex-direction: ${layout === 'inline' ? 'row' : 'column'};
+          align-items: ${alignment === 'center' ? 'center' : 'flex-start'};
+          justify-content: ${alignment === 'center' ? 'center' : 'space-between'};
           text-align: ${alignment};
-          padding: 4rem 2rem;
-          background-image: url('${background}');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
+          color: var(--brand-text-color, #333);
+          box-shadow: var(--brand-box-shadow-small, 0 2px 4px rgba(0, 0, 0, 0.1));
           position: relative;
-          color: #ffffff;
-          overflow: hidden;
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-          animation: fadeIn 1s ease-in-out;
+          gap: var(--brand-spacing-medium, 20px);
         }
-
-        .hero-container::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.4);
-          backdrop-filter: blur(4px);
-          z-index: 0;
-        }
-
+    
         .hero-headline {
-          font-size: 3rem;
-          font-weight: bold;
-          margin: 1rem 0;
-          z-index: 1;
-          animation: slideInDown 0.8s ease-in-out;
+          font-size: var(--brand-heading-font-size, 2.5rem);
+          margin-bottom: var(--brand-spacing-small, 16px);
+          text-align: inherit;
         }
-
+    
         .hero-subheadline {
-          font-size: 1.8rem;
-          font-weight: 300;
-          margin: 0.5rem 0;
-          z-index: 1;
-          animation: slideInUp 0.8s ease-in-out;
+          font-size: var(--brand-large-font-size, 1.5rem);
+          margin-bottom: var(--brand-spacing-small, 16px);
+          text-align: inherit;
         }
-
+    
         .hero-buttons {
-          margin-top: 2rem;
-          z-index: 1;
           display: flex;
-          gap: 1rem;
-          animation: fadeIn 1.2s ease-in-out;
+          gap: var(--brand-spacing-small, 16px);
+          margin-top: var(--brand-spacing, 24px);
+          justify-content: ${alignment};
         }
-
-        @keyframes fadeIn {
-          0% {
-            opacity: 0;
-          }
-          100% {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideInDown {
-          0% {
-            opacity: 0;
-            transform: translateY(-50px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInUp {
-          0% {
-            opacity: 0;
-            transform: translateY(50px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
+    
         @media (max-width: 768px) {
-          .hero-headline {
-            font-size: 2.2rem;
-          }
-
-          .hero-subheadline {
-            font-size: 1.4rem;
-          }
-
-          .hero-buttons {
+          .hero-container {
             flex-direction: column;
-            gap: 0.5rem;
+            text-align: center;
           }
         }
       </style>
       <div class="hero-container">
-        <slot name="headline" class="hero-headline"></slot>
-        <slot name="subheadline" class="hero-subheadline"></slot>
-        <div class="hero-buttons">
-          <slot name="buttons"></slot>
+        <div class="hero-content">
+          ${heading ? `<h1 class="hero-headline">${heading}</h1>` : ''}
+          ${subheading ? `<h2 class="hero-subheadline">${subheading}</h2>` : ''}
+          <div class="hero-buttons">
+            ${buttons.map(button => ButtonComponent.create(button).outerHTML).join('')}
+          </div>
         </div>
       </div>
     `;
   }
   
-  static create({ background, headline, subheadline, buttons, alignment }) {
+  static create({ background, heading, subheading, buttons, imagePosition, alignment, layout }) {
     const element = document.createElement('hero-component');
     if (background) element.setAttribute('background', background);
+    if (imagePosition) element.setAttribute('imagePosition', imagePosition);
     if (alignment) element.setAttribute('alignment', alignment);
+    if (layout) element.setAttribute('layout', layout);
     
-    if (headline) {
-      const headlineElement = document.createElement('h1');
-      headlineElement.textContent = headline;
-      headlineElement.slot = 'headline';
-      element.appendChild(headlineElement);
-    }
-    
-    if (subheadline) {
-      const subheadlineElement = document.createElement('h2');
-      subheadlineElement.textContent = subheadline;
-      subheadlineElement.slot = 'subheadline';
-      element.appendChild(subheadlineElement);
-    }
-    
+    if (heading) element.setAttribute('heading', heading);
+    if (subheading) element.setAttribute('subheading', subheading);
     if (buttons && Array.isArray(buttons)) {
-      buttons.forEach(button => {
-        const buttonElement = ButtonComponent.create(button);
-        buttonElement.slot = 'buttons';
-        element.appendChild(buttonElement);
-      });
+      element.setAttribute('buttons', JSON.stringify(buttons));
     }
     
     return element;

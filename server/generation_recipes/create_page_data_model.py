@@ -46,6 +46,7 @@ def make_image_generator(dalle, url_mapping, uploaded_images):
           type: string
           description: The image URL generated based on the prompt.
         """
+        print(f"Randomly selecting image from uploaded images: {len(uploaded_images)}")
         if uploaded_images and len(uploaded_images) > 0:
             # Choose a random image from the uploaded images
             selected_hash = random.choice(list(uploaded_images.keys()))
@@ -58,13 +59,10 @@ def make_image_generator(dalle, url_mapping, uploaded_images):
     return generate_image
 
 
-def create_page_data_model(job_id: str, markdown_content: List[str], page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str]) -> str:
+def create_page_data_model(job_id: str, markdown_content: List[str], screenshot: bytes, page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str]) -> str:
     try:
         root_schema_file = "server/generation_recipes/component_schemas/page.json"
         bundled_schema = bundle_schemas(root_schema_file)
-
-        print("Bundled schema:")
-        print(bundled_schema)
 
         url_mapping = {}
         generate_image = make_image_generator(DalleClient(), url_mapping, uploaded_images)
@@ -72,6 +70,9 @@ def create_page_data_model(job_id: str, markdown_content: List[str], page_brief:
         full_prompt = f'''
             You are a professional web developer tasked with creating a data model for a new web page.
             The client has provided the following information:
+            
+            ### Markdown Content ###
+            {'\n'.join(markdown_content)}
             
             ### Page Brief ###
             {page_brief}
@@ -82,16 +83,14 @@ def create_page_data_model(job_id: str, markdown_content: List[str], page_brief:
             ### User Intent ###
             {user_intent}
             
-            ### Markdown Content ###
-            {"\n\n".join(markdown_content)} 
-                            
             Your task is to transform the provided markdown content, page brief, 
-            and page narrative into a well-structured data model that adheres to the page schema.
+            and page narrative into a well-structured JSON data model that adheres to the page schema.
                         
             ### Page Data Schema ###
             {json.dumps(bundled_schema, indent=2)}
 
-            Use the following format for image URLs: /generated/{job_id}/<image_url>.png
+            You MUST generate images URLs for the images and include them in the JSON structure.
+            Insert the image URLs like this: /generated/{job_id}/<image_url_hash_string>.png
 
             The output should be a JSON object that conforms to the provided schema.
             The JSON object MUST not contain the parts of the schema.
@@ -100,7 +99,7 @@ def create_page_data_model(job_id: str, markdown_content: List[str], page_brief:
         '''
 
         client = LlmClient(model=ModelType.GPT_4_OMNI)
-        llm_response = client.get_completions(full_prompt, temperature=1.0, tools=[generate_image], json_output=True)
+        llm_response = client.get_completions(full_prompt, temperature=1.0, json_output=True, json_schema=bundled_schema, tools=[generate_image], image_list=[screenshot])
         generated_data = parse_markdown_output(llm_response, lang='json')
 
         print("Generated data:")

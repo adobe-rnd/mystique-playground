@@ -1,4 +1,4 @@
-import {ImageComponent} from './image.js';
+import { ImageComponent } from './image.js';
 
 export class HeaderComponent extends HTMLElement {
   constructor() {
@@ -12,84 +12,65 @@ export class HeaderComponent extends HTMLElement {
   
   render() {
     const alignment = this.getAttribute('alignment') || 'left';
+    const logoSrc = this.getAttribute('logo-src') || '';
+    const logoAlt = this.getAttribute('logo-alt') || 'Logo';
+    const navigation = JSON.parse(this.getAttribute('navigation') || '[]');
     
     this.shadowRoot.innerHTML = `
       <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
         .header-container {
           display: flex;
+          justify-content: ${alignment};
           align-items: center;
-          justify-content: ${alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start'};
-          text-align: ${alignment};
-          background: linear-gradient(135deg, #ff6ec4, #7873f5);
-          padding: 1rem 2rem;
-          border-radius: 12px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        nav a {
-          margin: 0 1rem;
-          font-family: 'Poppins', sans-serif;
-          font-size: 1rem;
-          font-weight: 500;
-          color: #ffffff;
-          text-decoration: none;
-          transition: color 0.3s, transform 0.3s;
+          background-color: var(--brand-primary-color, #fff);
+          padding: var(--brand-padding-medium, 16px);
+          border-radius: var(--brand-border-radius, 8px);
+          box-shadow: var(--brand-box-shadow-small, 0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
-        nav a:hover {
-          color: #ffde17;
-          transform: scale(1.05);
+        .logo img {
+          height: 50px;
+          width: auto;
+          margin-right: var(--brand-spacing-small, 16px);
         }
 
         nav {
           display: flex;
-          gap: 1rem;
+          gap: var(--brand-spacing-small, 16px);
         }
 
-        .header-container::before {
-          content: '';
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          top: 0;
-          left: 0;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.1));
-          opacity: 0.3;
-          pointer-events: none;
+        nav a {
+          color: var(--brand-text-color, #333);
+          font-family: var(--brand-font-family, Arial, sans-serif);
+          font-size: var(--brand-font-size, 16px);
+          text-decoration: none;
+          transition: color 0.3s ease;
         }
 
-        slot[name="logo"]::slotted(img) {
-          width: 50px;
-          height: auto;
-          margin-right: 2rem;
+        nav a:hover {
+          color: var(--brand-link-hover-color, #007BFF);
         }
 
         @media (max-width: 768px) {
           .header-container {
             flex-direction: column;
-            padding: 1rem;
             text-align: center;
           }
-          
-          nav {
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-          
-          slot[name="logo"]::slotted(img) {
-            margin-bottom: 1rem;
+
+          .logo {
+            margin-bottom: var(--brand-spacing-small, 16px);
           }
         }
       </style>
       <div class="header-container">
-        <slot name="logo"></slot>
-        <slot name="navigation"></slot>
+        <div class="logo">
+          ${logoSrc ? `<img src="${logoSrc}" alt="${logoAlt}" />` : ''}
+        </div>
+        <nav>
+          ${navigation.map(link => `
+            <a href="${link.url}" class="nav-link">${link.text}</a>
+          `).join('')}
+        </nav>
       </div>
     `;
   }
@@ -99,21 +80,12 @@ export class HeaderComponent extends HTMLElement {
     if (alignment) element.setAttribute('alignment', alignment);
     
     if (logo) {
-      const logoElement = ImageComponent.create(logo);
-      logoElement.slot = 'logo';
-      element.appendChild(logoElement);
+      element.setAttribute('logo-src', logo.src);
+      element.setAttribute('logo-alt', logo.alt);
     }
     
     if (navigation && Array.isArray(navigation)) {
-      const navContainer = document.createElement('nav');
-      navigation.forEach(link => {
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', link.url);
-        linkElement.textContent = link.text;
-        navContainer.appendChild(linkElement);
-      });
-      navContainer.slot = 'navigation';
-      element.appendChild(navContainer);
+      element.setAttribute('navigation', JSON.stringify(navigation));
     }
     
     return element;

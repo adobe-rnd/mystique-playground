@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "footer"
     },
     "text": {
@@ -22,11 +23,11 @@
           },
           "url": {
             "type": "string",
-            "format": "uri",
             "description": "The URL the link points to."
           }
         },
-        "required": ["text", "url"]
+        "required": ["text", "url"],
+        "additionalProperties": false
       }
     },
     "layout": {
@@ -40,5 +41,6 @@
       "description": "The alignment of the footer content."
     }
   },
-  "required": ["text"]
+  "required": ["kind", "text", "links", "layout", "alignment"],
+  "additionalProperties": false
 }

@@ -1,5 +1,5 @@
-import {ImageComponent} from './image.js';
-import {ButtonComponent} from './button.js';
+import { ImageComponent } from './image.js';
+import { ButtonComponent } from './button.js';
 
 export class CardComponent extends HTMLElement {
   constructor() {
@@ -12,8 +12,14 @@ export class CardComponent extends HTMLElement {
   }
   
   render() {
-    const layout = this.getAttribute('layout') || 'stacked';
+    const layout = this.getAttribute('layout') || 'vertical';
     const alignment = this.getAttribute('alignment') || 'left';
+    
+    const imageSrc = this.getAttribute('imageSrc') || '';
+    const imageAlt = this.getAttribute('imageAlt') || '';
+    const title = this.getAttribute('title') || '';
+    const description = this.getAttribute('description') || '';
+    const buttons = JSON.parse(this.getAttribute('buttons') || '[]');
     
     this.shadowRoot.innerHTML = `
       <style>
@@ -27,77 +33,72 @@ export class CardComponent extends HTMLElement {
           display: flex;
           flex-direction: ${layout === 'horizontal' ? 'row' : 'column'};
           text-align: ${alignment};
-          padding: 1.5rem;
-          border-radius: 12px;
-          background: #ffffff;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          padding: var(--brand-padding-medium, 16px);
+          border-radius: var(--brand-border-radius, 8px);
+          background: var(--brand-background-color, #fff);
+          box-shadow: var(--brand-box-shadow-small, 0 2px 4px rgba(0, 0, 0, 0.1));
           overflow: hidden;
           position: relative;
+          height: 100%;
+          margin: var(--brand-spacing-small, 16px);
         }
 
-        .card-container:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        .card-image {
+          flex: 0 0 40%;
+          margin-right: ${layout === 'horizontal' ? '16px' : '0'};
         }
 
-        .card-container::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
+        .card-image img {
           width: 100%;
           height: 100%;
-          background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(107, 255, 107, 0.15));
-          opacity: 0.2;
-          z-index: 0;
-        }
-
-        ::slotted(img) {
-          width: 100%;
-          border-radius: 8px;
-          margin-bottom: 1rem;
+          object-fit: cover;
         }
 
         .card-content {
-          z-index: 1;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          justify-content: space-between;
+          flex: 1;
+          padding: ${layout === 'horizontal' ? '0' : '16px'};
         }
 
-        ::slotted(h3) {
-          font-size: 1.8rem;
-          margin: 0;
-          font-weight: 600;
-          color: #333333;
+        .card-title {
+          font-size: var(--brand-heading-font-size, 1.5rem);
+          color: var(--brand-heading-color, #333);
+          margin-bottom: var(--brand-spacing-small, 16px);
         }
 
-        ::slotted(p) {
-          font-size: 1rem;
-          font-weight: 300;
-          color: #555555;
+        .card-description {
+          font-size: var(--brand-font-size, 1rem);
+          color: var(--brand-text-color, #666);
+          margin-bottom: var(--brand-spacing-small, 16px);
+          flex: 1;
         }
 
         .card-buttons {
           display: flex;
-          gap: 0.5rem;
-          margin-top: 1rem;
+          gap: var(--brand-spacing-small, 16px);
+          margin-top: auto;
         }
 
         @media (max-width: 768px) {
           .card-container {
             flex-direction: column;
           }
+
+          .card-image {
+            margin-right: 0;
+            margin-bottom: 16px;
+          }
         }
       </style>
       <div class="card-container">
-        <slot name="image"></slot>
+        ${imageSrc ? `<div class="card-image"><img src="${imageSrc}" alt="${imageAlt}"></div>` : ''}
         <div class="card-content">
-          <slot name="title"></slot>
-          <slot name="description"></slot>
+          ${title ? `<h3 class="card-title">${title}</h3>` : ''}
+          ${description ? `<p class="card-description">${description}</p>` : ''}
           <div class="card-buttons">
-            <slot name="buttons"></slot>
+            ${buttons.map(button => ButtonComponent.create(button).outerHTML).join('')}
           </div>
         </div>
       </div>
@@ -110,33 +111,20 @@ export class CardComponent extends HTMLElement {
     if (alignment) element.setAttribute('alignment', alignment);
     
     if (image) {
-      const imageElement = ImageComponent.create(image);
-      imageElement.slot = 'image';
-      element.appendChild(imageElement);
+      element.setAttribute('imageSrc', image.src);
+      element.setAttribute('imageAlt', image.alt);
     }
     
     if (title) {
-      const titleElement = document.createElement('h3');
-      titleElement.textContent = title;
-      titleElement.slot = 'title';
-      element.appendChild(titleElement);
+      element.setAttribute('title', title);
     }
     
     if (description) {
-      const descriptionElement = document.createElement('p');
-      descriptionElement.textContent = description;
-      descriptionElement.slot = 'description';
-      element.appendChild(descriptionElement);
+      element.setAttribute('description', description);
     }
     
     if (buttons && Array.isArray(buttons)) {
-      const buttonContainer = document.createElement('div');
-      buttons.forEach(button => {
-        const buttonElement = ButtonComponent.create(button);
-        buttonContainer.appendChild(buttonElement);
-      });
-      buttonContainer.slot = 'buttons';
-      element.appendChild(buttonContainer);
+      element.setAttribute('buttons', JSON.stringify(buttons));
     }
     
     return element;

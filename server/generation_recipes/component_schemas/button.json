@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "button"
     },
     "text": {
@@ -12,7 +13,6 @@
     },
     "url": {
       "type": "string",
-      "format": "uri",
       "description": "The URL the button links to."
     },
     "style": {
@@ -35,5 +35,6 @@
       "description": "The alignment of the button."
     }
   },
-  "required": ["text", "url"]
+  "required": ["kind", "text", "url", "style", "isPrimary", "size", "alignment"],
+  "additionalProperties": false
 }

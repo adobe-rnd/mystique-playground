@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "page"
     },
     "header": {
@@ -15,13 +16,13 @@
       "description": "An array of sections that make up the main content of the page.",
       "items": {
         "$ref": "section.json"
-      },
-      "minItems": 0
+      }
     },
     "footer": {
       "$ref": "footer.json",
       "description": "The footer section of the page."
     }
   },
-  "required": ["header", "footer"]
+  "required": ["kind", "header", "sections", "footer"],
+  "additionalProperties": false
 }

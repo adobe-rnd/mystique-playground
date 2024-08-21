@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "section"
     },
     "children": {
@@ -12,7 +13,7 @@
       "items": {
         "type": "object",
         "description": "The actual data for the content, structured according to the type. References can be used for reusable components like images or buttons.",
-        "oneOf": [
+        "anyOf": [
           {
             "$ref": "hero.json"
           },
@@ -33,5 +34,6 @@
       "description": "The number of columns to display the content in."
     }
   },
-  "required": ["children"]
+  "required": ["kind", "children", "spacing", "columns"],
+  "additionalProperties": false
 }

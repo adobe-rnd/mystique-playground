@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "card"
     },
     "image": {
@@ -23,9 +24,7 @@
       "description": "An array of buttons for actions related to the card.",
       "items": {
         "$ref": "button.json"
-      },
-      "minItems": 0,
-      "uniqueItems": true
+      }
     },
     "layout": {
       "type": "string",
@@ -38,5 +37,6 @@
       "description": "The alignment of the card content."
     }
   },
-  "required": ["title"]
+  "required": ["kind", "title", "description", "image", "buttons", "layout", "alignment"],
+  "additionalProperties": false
 }

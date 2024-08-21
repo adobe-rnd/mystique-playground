@@ -60,9 +60,9 @@ class StandardGenerationRecipe(Job):
 
             print(inferred_css_vars)
 
-            self.set_status(JobStatus.PROCESSING, 'Generating Page Data Model...')
-            page_data_model = create_page_data_model(self.job_id, markdown_content, page_brief, page_narrative, self.user_intent, all_images)
-            self.set_status(JobStatus.PROCESSING, 'Page Data Model generated.')
+            self.set_status(JobStatus.PROCESSING, 'Generating page data model...')
+            page_data_model = create_page_data_model(self.job_id, markdown_content, screenshot, page_brief, page_narrative, self.user_intent, all_images)
+            self.set_status(JobStatus.PROCESSING, 'Page data model generated.')
 
             print(page_data_model)
 

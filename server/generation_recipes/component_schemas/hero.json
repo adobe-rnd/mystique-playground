@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "hero"
     },
     "heading": {
@@ -15,38 +16,24 @@
       "description": "The subheading or description text."
     },
     "image": {
-      "type": "object",
-      "allOf": [
-        { "$ref": "image.json" },
-        {
-          "properties": {
-            "appearance": {
-              "type": "object",
-              "properties": {
-                "position": {
-                  "type": "string",
-                  "enum": ["left", "center", "right"],
-                  "description": "The position of the image relative to the content."
-                },
-                "overlay": {
-                  "type": "boolean",
-                  "description": "Whether or not to overlay the image over the content."
-                }
-              }
-            }
-          }
-        }
-      ],
-      "description": "The hero-specific image with additional properties."
+      "$ref": "image.json",
+      "description": "The image for the hero block."
     },
     "buttons": {
       "type": "array",
       "description": "An array of buttons that can be used as CTAs.",
       "items": {
         "$ref": "button.json"
-      },
-      "minItems": 0,
-      "uniqueItems": true
+      }
+    },
+    "imagePosition": {
+      "type": "string",
+      "enum": ["left", "center", "right"],
+      "description": "The position of the image relative to the content."
+    },
+    "imageOverlay": {
+      "type": "boolean",
+      "description": "Whether the image should have an overlay."
     },
     "alignment": {
       "type": "string",
@@ -59,5 +46,6 @@
       "description": "Layout type for the content relative to the image."
     }
   },
-  "required": ["heading", "image", "alignment", "layout"]
+  "required": ["kind", "heading", "subheading", "image", "buttons", "imagePosition", "imageOverlay", "alignment", "layout"],
+  "additionalProperties": false
 }

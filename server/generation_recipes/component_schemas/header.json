@@ -4,11 +4,8 @@
   "type": "object",
   "properties": {
     "kind": {
+      "type": "string",
       "const": "header"
-    },
-    "logo": {
-      "$ref": "image.json",
-      "description": "The logo image in the header."
     },
     "navigation": {
       "type": "array",
@@ -22,11 +19,11 @@
           },
           "url": {
             "type": "string",
-            "format": "uri",
             "description": "The URL the navigation link points to."
           }
         },
-        "required": ["text", "url"]
+        "required": ["text", "url"],
+        "additionalProperties": false
       }
     },
     "alignment": {
@@ -35,5 +32,6 @@
       "description": "The alignment of the header content."
     }
   },
-  "required": ["logo", "navigation"]
+  "required": ["kind", "navigation", "alignment"],
+  "additionalProperties": false
 }

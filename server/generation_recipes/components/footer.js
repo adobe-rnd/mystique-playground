@@ -9,70 +9,61 @@ export class FooterComponent extends HTMLElement {
   }
   
   render() {
-    const layout = this.getAttribute('layout') || 'inline';
     const alignment = this.getAttribute('alignment') || 'center';
+    const layout = this.getAttribute('layout') || 'inline';
+    const textContent = this.getAttribute('text') || '';
+    const links = JSON.parse(this.getAttribute('links') || '[]');
     
     this.shadowRoot.innerHTML = `
       <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
         .footer-container {
-          display: flex;
-          flex-direction: ${layout === 'inline' ? 'row' : 'column'};
-          align-items: ${alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start'};
+          display: ${layout === 'stacked' ? 'block' : 'flex'};
           justify-content: ${alignment};
+          align-items: center;
+          padding: var(--brand-padding-medium, 16px);
+          background-color: var(--brand-primary-color, #f8f8f8);
+          color: var(--brand-text-color, #333);
+          border-radius: var(--brand-border-radius, 8px);
           text-align: ${alignment};
-          padding: 2rem;
-          background-color: #2b2e4a;
-          color: white;
-          border-radius: 12px;
-          gap: 1rem;
-          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        ::slotted(span) {
-          font-size: 1rem;
-          color: #dddddd;
+        .footer-text {
+          margin-right: ${layout === 'stacked' ? '0' : 'auto'};
+          margin-bottom: ${layout === 'stacked' ? '16px' : '0'};
         }
 
         .footer-links {
           display: flex;
-          gap: 1rem;
+          gap: var(--brand-spacing-small, 16px);
         }
 
-        ::slotted(a) {
-          color: #ff6ec4;
+        .footer-links a {
+          color: var(--brand-link-color, #007BFF);
           text-decoration: none;
-          font-weight: 500;
           transition: color 0.3s ease;
         }
 
-        ::slotted(a:hover) {
-          color: #ffde17;
+        .footer-links a:hover {
+          color: var(--brand-link-hover-color, #0056b3);
         }
 
         @media (max-width: 768px) {
           .footer-container {
             flex-direction: column;
-            align-items: center;
             text-align: center;
           }
-          
-          .footer-links {
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
+
+          .footer-text {
+            margin-bottom: 16px;
           }
         }
       </style>
       <div class="footer-container">
-        <slot name="text"></slot>
+        <div class="footer-text">${textContent}</div>
         <div class="footer-links">
-          <slot name="links"></slot>
+          ${links.map(link => `
+            <a href="${link.url}">${link.text}</a>
+          `).join('')}
         </div>
       </div>
     `;
@@ -82,24 +73,9 @@ export class FooterComponent extends HTMLElement {
     const element = document.createElement('footer-component');
     if (layout) element.setAttribute('layout', layout);
     if (alignment) element.setAttribute('alignment', alignment);
-    
-    if (text) {
-      const textElement = document.createElement('span');
-      textElement.textContent = text;
-      textElement.slot = 'text';
-      element.appendChild(textElement);
-    }
-    
+    if (text) element.setAttribute('text', text);
     if (links && Array.isArray(links)) {
-      const linkContainer = document.createElement('div');
-      links.forEach(link => {
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', link.url);
-        linkElement.textContent = link.text;
-        linkContainer.appendChild(linkElement);
-      });
-      linkContainer.slot = 'links';
-      element.appendChild(linkContainer);
+      element.setAttribute('links', JSON.stringify(links));
     }
     
     return element;
