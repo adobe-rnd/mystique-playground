@@ -15,9 +15,9 @@
       "type": "string",
       "description": "The subheading or description text."
     },
-    "image": {
+    "backgroundImage": {
       "$ref": "image.json",
-      "description": "The image for the hero block."
+      "description": "The background image for the hero block."
     },
     "buttons": {
       "type": "array",
@@ -25,15 +25,6 @@
       "items": {
         "$ref": "button.json"
       }
-    },
-    "imagePosition": {
-      "type": "string",
-      "enum": ["left", "center", "right"],
-      "description": "The position of the image relative to the content."
-    },
-    "imageOverlay": {
-      "type": "boolean",
-      "description": "Whether the image should have an overlay."
     },
     "alignment": {
       "type": "string",
@@ -46,6 +37,6 @@
       "description": "Layout type for the content relative to the image."
     }
   },
-  "required": ["kind", "heading", "subheading", "image", "buttons", "imagePosition", "imageOverlay", "alignment", "layout"],
+  "required": ["kind", "heading", "subheading", "backgroundImage", "buttons", "alignment", "layout"],
   "additionalProperties": false
 }

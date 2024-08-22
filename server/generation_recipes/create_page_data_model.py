@@ -16,7 +16,7 @@ import random
 GENERATED_IMAGES_DIR = 'pictures'
 
 
-def generate_dalle_image(dalle, prompt, url_mapping):
+def generate_dalle_image(dalle, prompt, url_mapping, job_id):
     data_url = dalle.generate_image(prompt)
 
     # Save the image to a file
@@ -29,15 +29,16 @@ def generate_dalle_image(dalle, prompt, url_mapping):
         f.write(data)
 
     url_hash = hashlib.md5(data_url.encode()).hexdigest()
-    url_mapping.update({url_hash: data_url})
+    image_url = f"/generated/{job_id}/{url_hash}.png"
+    url_mapping.update({image_url: data_url})
 
     return url_hash
 
 
-def make_image_generator(dalle, url_mapping, uploaded_images):
+def background_image_generator(dalle, url_mapping, job_id):
     def generate_image(prompt):
         """
-        description: Generate an image URL based on the provided prompt.
+        description: Generate a background image based on the provided prompt.
         parameters:
           prompt:
             type: string
@@ -46,26 +47,27 @@ def make_image_generator(dalle, url_mapping, uploaded_images):
           type: string
           description: The image URL generated based on the prompt.
         """
-        print(f"Randomly selecting image from uploaded images: {len(uploaded_images)}")
-        if uploaded_images and len(uploaded_images) > 0:
-            # Choose a random image from the uploaded images
-            selected_hash = random.choice(list(uploaded_images.keys()))
-            print(f"Selected image hash: {selected_hash}")
-            return selected_hash
-        else:
-            # Fall back to using DALL-E
-            return generate_dalle_image(dalle, prompt, url_mapping)
+        return generate_dalle_image(dalle, prompt, url_mapping, job_id)
 
     return generate_image
 
 
-def create_page_data_model(job_id: str, markdown_content: List[str], screenshot: bytes, page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str]) -> str:
+def create_page_data_model(job_id: str, markdown_content: List[str], screenshot: bytes, page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str], image_captions: Dict[str, str]) -> str:
     try:
         root_schema_file = "server/generation_recipes/component_schemas/page.json"
         bundled_schema = bundle_schemas(root_schema_file)
 
         url_mapping = {}
-        generate_image = make_image_generator(DalleClient(), url_mapping, uploaded_images)
+        generate_background_image = background_image_generator(DalleClient(), url_mapping, job_id)
+
+        # Prepare image captions and hashes for the prompt
+        image_info_list = []
+        for url_hash, image_url in uploaded_images.items():
+            caption = image_captions.get(url_hash, "No caption provided")
+            image_url = f"/generated/{job_id}/{url_hash}.png"
+            image_info_list.append(f"Image URL: {image_url}, Caption: {caption}")
+
+        image_info_text = "\n".join(image_info_list)
 
         full_prompt = f'''
             You are a professional web developer tasked with creating a data model for a new web page.
@@ -82,15 +84,19 @@ def create_page_data_model(job_id: str, markdown_content: List[str], screenshot:
             
             ### User Intent ###
             {user_intent}
+
+            ### Uploaded Images and Captions ###
+            {image_info_text}
             
             Your task is to transform the provided markdown content, page brief, 
             and page narrative into a well-structured JSON data model that adheres to the page schema.
+            
+            You generate background images based on the provided prompts to enhance the page data model.
+            
+            You MUST use provided image URLs literally without any modifications.
                         
             ### Page Data Schema ###
             {json.dumps(bundled_schema, indent=2)}
-
-            You MUST generate images URLs for the images and include them in the JSON structure.
-            Insert the image URLs like this: /generated/{job_id}/<image_url_hash_string>.png
 
             The output should be a JSON object that conforms to the provided schema.
             The JSON object MUST not contain the parts of the schema.
@@ -99,7 +105,7 @@ def create_page_data_model(job_id: str, markdown_content: List[str], screenshot:
         '''
 
         client = LlmClient(model=ModelType.GPT_4_OMNI)
-        llm_response = client.get_completions(full_prompt, temperature=1.0, json_output=True, json_schema=bundled_schema, tools=[generate_image], image_list=[screenshot])
+        llm_response = client.get_completions(full_prompt, temperature=0.2, json_output=True, json_schema=bundled_schema, image_list=[screenshot], tools=[generate_background_image])
         generated_data = parse_markdown_output(llm_response, lang='json')
 
         print("Generated data:")

@@ -6,6 +6,8 @@ A playground and toolkit for the Mystique project.
 
 1. Create a `.env` file in the root directory with the following content:
    ```shell
+   echo "OPENAI_API_TYPE=azure # azure or openai" > .env
+   echo "OPENAI_API_KEY=..." > .env
    echo "AZURE_OPENAI_API_KEY=..." > .env
    echo "AZURE_OPENAI_ENDPOINT=https://openai-west-us-tsaplin.openai.azure.com/" >> .env
    echo "AZURE_OPENAI_DALLE_API_KEY=..." >> .env

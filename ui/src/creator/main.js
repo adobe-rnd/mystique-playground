@@ -17,9 +17,9 @@ import logo from './logo.png';
 import dropzoneIcon from './dropzone-icon.svg';
 
 const DEFAULT_INTENT = [
-  'I want to create a landing page for my new business',
-  'This page will be used to promote a new service',
-  'Also, I want to collect leads from this page'].join('\n');
+  'I plan to create a landing page for my new business to effectively promote a new service offering.',
+  'The primary goals of this page are to engage visitors, highlight the service’s key benefits, and strategically capture leads for future follow-up.'
+].join('\n');
 
 @customElement('web-creator-component')
 class MyFirstComponent extends LitElement {
@@ -38,7 +38,7 @@ class MyFirstComponent extends LitElement {
       box-sizing: border-box;
     }
     .hidden-element {
-      display: none;
+      display: none !important;
     }
     .main-container {
       display: flex;
@@ -166,9 +166,11 @@ class MyFirstComponent extends LitElement {
     }
     .results-container {
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .results-container .status-list {
-      margin-top: 16px;
       width: 100%;
       height: 120px;
       overflow-y: hidden;

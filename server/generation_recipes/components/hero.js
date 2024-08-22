@@ -11,20 +11,19 @@ export class HeroComponent extends HTMLElement {
   }
   
   render() {
-    const background = this.getAttribute('background') || '';
-    const alignment = this.getAttribute('alignment') || 'center';
-    const layout = this.getAttribute('layout') || 'stacked';
-    const imagePosition = this.getAttribute('imagePosition') || 'center';
-    
     const heading = this.getAttribute('heading') || '';
     const subheading = this.getAttribute('subheading') || '';
+    const backgroundImageSrc = this.getAttribute('background-image-src') || '';
+    const alignment = this.getAttribute('alignment') || 'center';
+    const layout = this.getAttribute('layout') || 'stacked';
+    
     const buttons = JSON.parse(this.getAttribute('buttons') || '[]');
     
     this.shadowRoot.innerHTML = `
       <style>
         .hero-container {
           padding: var(--brand-padding-large, 40px);
-          background: url('${background}') ${imagePosition} / cover, var(--brand-soft-background, #f0f0f0);
+          background: linear-gradient(rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.8)), url('${backgroundImageSrc}') center / cover;
           border-radius: var(--brand-border-radius, 8px);
           display: flex;
           flex-direction: ${layout === 'inline' ? 'row' : 'column'};
@@ -75,15 +74,17 @@ export class HeroComponent extends HTMLElement {
     `;
   }
   
-  static create({ background, heading, subheading, buttons, imagePosition, alignment, layout }) {
+  static create({ heading, subheading, backgroundImage, buttons, alignment, layout }) {
     const element = document.createElement('hero-component');
-    if (background) element.setAttribute('background', background);
-    if (imagePosition) element.setAttribute('imagePosition', imagePosition);
+    if (heading) element.setAttribute('heading', heading);
+    if (subheading) element.setAttribute('subheading', subheading);
+    if (backgroundImage) {
+      element.setAttribute('background-image-src', backgroundImage.src);
+      element.setAttribute('background-image-alt', backgroundImage.alt);
+    }
     if (alignment) element.setAttribute('alignment', alignment);
     if (layout) element.setAttribute('layout', layout);
     
-    if (heading) element.setAttribute('heading', heading);
-    if (subheading) element.setAttribute('subheading', subheading);
     if (buttons && Array.isArray(buttons)) {
       element.setAttribute('buttons', JSON.stringify(buttons));
     }

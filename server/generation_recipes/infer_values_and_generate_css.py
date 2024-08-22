@@ -20,7 +20,7 @@ def infer_css_vars(screenshot: bytes) -> str:
     """
     print(infer_values_prompt)
     client = LlmClient(model=ModelType.GPT_4_OMNI)
-    inferred_values_response = client.get_completions(infer_values_prompt, temperature=0.0, image_list=[screenshot])
+    inferred_values_response = client.get_completions(infer_values_prompt, temperature=0.0, json_output=True, image_list=[screenshot])
     print(inferred_values_response)
 
     inferred_values = json.loads(parse_markdown_output(inferred_values_response, lang='json'))
