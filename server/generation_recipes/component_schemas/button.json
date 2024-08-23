@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "button",
   "type": "object",
+  "description": "A button component that can be used as a call-to-action.",
   "properties": {
     "kind": {
       "type": "string",

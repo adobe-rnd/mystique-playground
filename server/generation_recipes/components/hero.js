@@ -79,8 +79,8 @@ export class HeroComponent extends HTMLElement {
     if (heading) element.setAttribute('heading', heading);
     if (subheading) element.setAttribute('subheading', subheading);
     if (backgroundImage) {
-      element.setAttribute('background-image-src', backgroundImage.src);
-      element.setAttribute('background-image-alt', backgroundImage.alt);
+      element.setAttribute('background-image-src', backgroundImage.imageUrl);
+      element.setAttribute('background-image-alt', backgroundImage.altText);
     }
     if (alignment) element.setAttribute('alignment', alignment);
     if (layout) element.setAttribute('layout', layout);

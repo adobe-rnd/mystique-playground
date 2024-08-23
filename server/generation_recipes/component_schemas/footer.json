@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "footer",
   "type": "object",
+  "description": "A footer block with text content and links.",
   "properties": {
     "kind": {
       "type": "string",

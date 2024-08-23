@@ -111,8 +111,8 @@ export class CardComponent extends HTMLElement {
     if (alignment) element.setAttribute('alignment', alignment);
     
     if (image) {
-      element.setAttribute('imageSrc', image.src);
-      element.setAttribute('imageAlt', image.alt);
+      element.setAttribute('imageSrc', image.imageUrl);
+      element.setAttribute('imageAlt', image.altText);
     }
     
     if (title) {

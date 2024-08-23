@@ -3,12 +3,54 @@ from io import BytesIO
 
 from playwright.async_api import async_playwright
 
-from server.shared.image import downscale_image, image_to_bytes
+from server.shared.image import crop_and_downscale_image, image_to_bytes
 
 
 class WebScraper:
     def __init__(self, headless=True):
         self.headless = headless
+
+    async def get_html(self, url, selector="body", wait_time=0, consent_popup_button_selector=None):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            page = await browser.new_page()
+
+            await page.goto(url)
+            await page.wait_for_load_state('networkidle')
+
+            if wait_time > 0:
+                print(f"Waiting for {wait_time}ms...")
+                await page.wait_for_timeout(wait_time)
+
+            if consent_popup_button_selector:
+                await page.locator(consent_popup_button_selector).click()
+
+            html = await page.locator(selector).inner_html()
+            await browser.close()
+
+            return html
+
+    async def get_screenshot(self, url, selector="body", wait_time=0, consent_popup_button_selector=None):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            page = await browser.new_page()
+
+            await page.goto(url)
+            await page.wait_for_load_state('networkidle')
+
+            if wait_time > 0:
+                print(f"Waiting for {wait_time}ms...")
+                await page.wait_for_timeout(wait_time)
+
+            if consent_popup_button_selector:
+                await page.locator(consent_popup_button_selector).click()
+
+            screenshot_data = await page.locator(selector).first.screenshot()
+            screenshot = Image.open(BytesIO(screenshot_data))
+
+            await browser.close()
+
+            return image_to_bytes(screenshot)
 
     async def get_html_and_screenshot(self, url, selector, with_styles=False, max_width=300, max_height=300, wait_time=0):
         async with async_playwright() as p:
@@ -24,8 +66,7 @@ class WebScraper:
                 await page.wait_for_timeout(wait_time)
 
             screenshot_data = await page.locator(selector).first.screenshot()
-            original_screenshot = Image.open(BytesIO(screenshot_data))
-            screenshot = downscale_image(original_screenshot, max_width, max_height)
+            screenshot = crop_and_downscale_image(screenshot_data, max_width, max_height)
 
             if not with_styles:
                 html = await page.locator(selector).inner_html()

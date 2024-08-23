@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "header",
   "type": "object",
+  "description": "A header block with navigation links.",
   "properties": {
     "kind": {
       "type": "string",

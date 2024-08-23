@@ -17,20 +17,48 @@ def load_image(image_source):
     return Image.open(image)
 
 
-def downscale_image(image, max_width, max_height):
-    img_ratio = image.width / image.height
-    target_ratio = max_width / max_height
+def crop_and_downscale_image(image_data, max_width=1024, max_height=1024, crop=False):
+    # Convert the bytes input to a PIL Image object
+    image = Image.open(BytesIO(image_data))
 
-    if img_ratio > target_ratio:
-        new_width = max_width
-        new_height = round(max_width / img_ratio)
+    if crop:
+        # If the image is wider than it is tall, crop using the full height
+        if image.width > image.height:
+            cropped_image = image.crop((0, 0, image.height, image.height))
+        else:
+            # Crop a square from the top using the image's width
+            square_size = image.width
+            cropped_image = image.crop((0, 0, square_size, square_size))
+
+        # Calculate the new dimensions to fit the cropped image within the bounding box
+        aspect_ratio = cropped_image.width / cropped_image.height
+        if aspect_ratio > 1:  # Wide image, fit to width
+            new_width = min(max_width, cropped_image.width)
+            new_height = round(new_width / aspect_ratio)
+        else:  # Tall or square image, fit to height
+            new_height = min(max_height, cropped_image.height)
+            new_width = round(new_height * aspect_ratio)
+
+        # Resize the cropped image to fit within the bounding box
+        image = cropped_image.resize((new_width, new_height))
     else:
-        new_height = max_height
-        new_width = round(max_height * img_ratio)
+        # Downscaling logic
+        img_ratio = image.width / image.height
+        target_ratio = max_width / max_height
 
-    downscaled_image = image.resize((new_width, new_height))
+        if img_ratio > target_ratio:
+            new_width = max_width
+            new_height = round(max_width / img_ratio)
+        else:
+            new_height = max_height
+            new_width = round(max_height * img_ratio)
 
-    return downscaled_image
+        image = image.resize((new_width, new_height))
+
+    # Convert the image back to bytes
+    output_buffer = BytesIO()
+    image.save(output_buffer, format='PNG')  # You can change format if needed
+    return output_buffer.getvalue()
 
 
 def image_to_bytes(image: Image.Image, format: str = 'PNG') -> bytes:

@@ -279,6 +279,11 @@ class MyFirstComponent extends LitElement {
     this.files.forEach(file => formData.append('files', file));
     formData.append('intent', this.intent);
     formData.append('websiteUrl', this.websiteUrl);
+    const recipeMap = {
+      "Standard": "standard",
+      "Copy Design": "copy_design"
+    };
+    formData.append('recipe', recipeMap[this.recipe]);
     
     try {
       const result = await wretch('http://localhost:4003/generate')
@@ -288,7 +293,7 @@ class MyFirstComponent extends LitElement {
       console.log(result);
       this.jobId = result.job_id;
       this.checkJobStatus(result.job_id);
-      this.scrollToBottomPage(); // Scroll to bottom when result is revealed
+      this.scrollToBottomPage();
     } catch (error) {
       console.error('Error uploading data:', error);
       this.addStatus('Error uploading data.');
@@ -346,7 +351,7 @@ class MyFirstComponent extends LitElement {
   }
   
   render() {
-    console.log('JOB status:', this.jobStatus);
+    console.log('Recipe:', this.recipe);
     return html`
       <sp-theme theme="spectrum" color="light" scale="medium">
         <div class="main-container">
@@ -405,11 +410,12 @@ class MyFirstComponent extends LitElement {
               <sp-field-label slot="label">Website URL</sp-field-label>
             </sp-textfield>
           </div>
-          <div class="inputs-container" style="display: none">
+          <div class="inputs-container">
             <div class="section-title">Step 4: Choose the Cooking Recipe</div>
             <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
-            <sp-combobox placeholder="Select a recipe" .value=${this.recipe} @input="${this.handleRecipeChange}">
+            <sp-combobox placeholder="Select a recipe" .value=${this.recipe} @change="${this.handleRecipeChange}">
               <sp-menu-item value="standard">Standard</sp-menu-item>
+              <sp-menu-item value="advanced">Copy Design</sp-menu-item>
             </sp-combobox>
           </div>
           <div class="results-container ${this.jobStatus === null ? 'hidden-element' : ''}">
@@ -419,8 +425,8 @@ class MyFirstComponent extends LitElement {
               ${this.statuses.map((status, index) => html`
                 <div class="status-item">
                   ${(this.jobStatus && (this.jobStatus !== 'completed' && this.jobStatus !== 'error') && index === this.statuses.length - 1) ? html`
-                  <sp-progress-circle indeterminate size="s"></sp-progress-circle>
-                ` : ''}
+                    <sp-progress-circle indeterminate size="s"></sp-progress-circle>
+                  ` : ''}
                   ${status}
                 </div>
               `)}

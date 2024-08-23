@@ -6,6 +6,7 @@ import os
 
 from flask_cors import CORS
 
+from server.generation_recipes.copy_design_generation_recipe import CopyDesignGenerationRecipe
 from server.job_manager import JobManager, JobStatus
 from server.generation_recipes.standard_generation_recipe import StandardGenerationRecipe
 from server.shared.file_utils import handle_file_upload
@@ -45,10 +46,24 @@ class WebCreator:
         try:
             user_intent = request.form.get("intent")
             website_url = request.form.get("websiteUrl")
+            recipe = request.form.get("recipe")
+            print(user_intent, website_url, recipe)
             file_paths = handle_file_upload(request.files, UPLOAD_FOLDER)
 
             job_id = self.job_manager.generate_job_id()
-            job = StandardGenerationRecipe(job_id, file_paths, user_intent, website_url)
+            print(f"Job ID: {job_id}")
+
+            # Create a folder for the job
+            job_folder = os.path.join(GENERATED_FOLDER, job_id)
+            os.makedirs(job_folder, exist_ok=True)
+            print(f"Job folder created: {job_folder}")
+
+            if recipe == "standard":
+                job = StandardGenerationRecipe(job_id, job_folder, file_paths, user_intent, website_url)
+            elif recipe == "copy_design":
+                job = CopyDesignGenerationRecipe(job_id, job_folder, file_paths, user_intent, website_url)
+            else:
+                return jsonify({"error": "Recipe not found"}), 400
             self.job_manager.add_job(job)
 
             return jsonify({"job_id": job_id}), 200

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "card",
   "type": "object",
+  "description": "A card component with an image, title, description, and buttons.",
   "properties": {
     "kind": {
       "type": "string",

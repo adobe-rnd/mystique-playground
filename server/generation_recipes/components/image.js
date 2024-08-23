@@ -4,10 +4,11 @@ export class ImageComponent extends HTMLElement {
     this.attachShadow({ mode: 'open' });
   }
   
-  static create({ src, alt }) {
+  static create({ imageUrl, altText }) {
+    console.log('imageUrl:', imageUrl);
     const element = document.createElement('image-component');
-    element.setAttribute('src', src);
-    element.setAttribute('alt', alt);
+    element.setAttribute('src', imageUrl);
+    element.setAttribute('alt', altText);
     return element;
   }
   

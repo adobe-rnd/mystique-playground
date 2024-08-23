@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "image",
   "type": "object",
+  "description": "An image component with a URL source and alt text.",
   "properties": {
     "kind": {
       "type": "string",
@@ -11,15 +12,11 @@
       "type": "string",
       "description": "The URL source of the image."
     },
-    "src": {
-      "type": "string",
-      "description": "The URL source of the image."
-    },
-    "alt": {
+    "altText": {
       "type": "string",
       "description": "The alt text for the image."
     }
   },
-  "required": ["kind", "imageUrl", "src", "alt"],
+  "required": ["kind", "imageUrl", "altText"],
   "additionalProperties": false
 }

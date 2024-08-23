@@ -12,8 +12,6 @@ export class HeaderComponent extends HTMLElement {
   
   render() {
     const alignment = this.getAttribute('alignment') || 'left';
-    const logoSrc = this.getAttribute('logo-src') || '';
-    const logoAlt = this.getAttribute('logo-alt') || 'Logo';
     const navigation = JSON.parse(this.getAttribute('navigation') || '[]');
     
     this.shadowRoot.innerHTML = `
@@ -63,9 +61,6 @@ export class HeaderComponent extends HTMLElement {
         }
       </style>
       <div class="header-container">
-        <div class="logo">
-          ${logoSrc ? `<img src="${logoSrc}" alt="${logoAlt}" />` : ''}
-        </div>
         <nav>
           ${navigation.map(link => `
             <a href="${link.url}" class="nav-link">${link.text}</a>
@@ -75,14 +70,9 @@ export class HeaderComponent extends HTMLElement {
     `;
   }
   
-  static create({ logo, navigation, alignment }) {
+  static create({ navigation, alignment }) {
     const element = document.createElement('header-component');
     if (alignment) element.setAttribute('alignment', alignment);
-    
-    if (logo) {
-      element.setAttribute('logo-src', logo.src);
-      element.setAttribute('logo-alt', logo.alt);
-    }
     
     if (navigation && Array.isArray(navigation)) {
       element.setAttribute('navigation', JSON.stringify(navigation));
