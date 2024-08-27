@@ -1,24 +1,35 @@
-import os
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
+from server.generation_recipes.base_recipe import BaseGenerationRecipe
 from server.generation_recipes.create_page_from_html import create_page_from_html
-from server.generation_recipes.enhance_user_intent import enhance_user_intent
+from server.generation_recipes.generate_page_html_using_bootstrap_css import generate_page_html_using_bootstrap_css
+from server.generation_recipes.refine_user_intent import refine_user_intent
 from server.generation_recipes.generate_image_captions import generate_image_captions
-from server.generation_recipes.generate_page_html import generate_page_html
 from server.generation_recipes.load_images_from_files import load_images_from_files
 from server.job_manager import JobStatus, Job
 from server.generation_recipes.extract_markdown_and_images import extract_markdown_and_images
 from server.generation_recipes.fetch_html_and_screenshot import fetch_html_and_screenshot
 
 
-class CopyDesignGenerationRecipe(Job):
+class CopyDesignGenerationRecipe(BaseGenerationRecipe):
     def __init__(self, job_id, job_folder, uploaded_files, user_intent, website_url):
         super().__init__(job_id)
         self.job_folder = job_folder
         self.uploaded_files = uploaded_files
         self.user_intent = user_intent
         self.website_url = website_url
+
+    @staticmethod
+    def get_id():
+        return 'copy_design_generation_recipe'
+
+    @staticmethod
+    def name():
+        return 'Copy Design'
+
+    @staticmethod
+    def description():
+        return 'A generation recipe that copies the design of an existing webpage.'
 
     async def run(self):
         try:
@@ -30,7 +41,7 @@ class CopyDesignGenerationRecipe(Job):
             markdown_task = loop.run_in_executor(None, extract_markdown_and_images, self.uploaded_files)
             images_task = loop.run_in_executor(None, load_images_from_files, self.uploaded_files)
             html_screenshot_task = fetch_html_and_screenshot(self.website_url, self.job_folder)
-            enhance_user_intent_task = loop.run_in_executor(None, enhance_user_intent, self.user_intent)
+            enhance_user_intent_task = loop.run_in_executor(None, refine_user_intent, self.user_intent)
 
             # Await results from Group 1 concurrently
             (markdown_content, extracted_images), uploaded_images, (html, screenshot), enhanced_user_intent = await asyncio.gather(
@@ -58,7 +69,7 @@ class CopyDesignGenerationRecipe(Job):
             # Group 3: Schedule final tasks and update status
             self.set_status(JobStatus.PROCESSING, 'Scheduling HTML generation...')
             page_html_task = loop.run_in_executor(
-                None, generate_page_html, self.job_folder, markdown_content, all_images, image_captions, screenshot
+                None, generate_page_html_using_bootstrap_css, self.job_folder, markdown_content, all_images, image_captions, screenshot
             )
             page_html = await page_html_task
             self.set_status(JobStatus.PROCESSING, 'HTML generated.')
@@ -70,4 +81,4 @@ class CopyDesignGenerationRecipe(Job):
 
         except Exception as e:
             print(e)
-            self.set_status(JobStatus.ERROR, error=str(e))
+            self.set_status(JobStatus.ERROR, f'An error occurred: {e}')

@@ -52,7 +52,7 @@ def background_image_generator(dalle, url_mapping, job_id):
     return generate_image
 
 
-def generate_page_html(job_folder: str, markdown_content: List[str], uploaded_images: Dict[str, str], image_captions: Dict[str, str], screenshot: bytes) -> str:
+def generate_page_html_by_copying_design(job_folder: str, markdown_content: List[str], uploaded_images: Dict[str, str], image_captions: Dict[str, str], screenshot: bytes) -> str:
     try:
         # Prepare image captions and hashes for the prompt
         image_info_list = []

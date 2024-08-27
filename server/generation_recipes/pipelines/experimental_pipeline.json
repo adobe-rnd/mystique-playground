@@ -1,0 +1,37 @@
+{
+  "id": "experimental_pipeline",
+  "name": "Experimental Pipeline",
+  "description": "This pipeline is used to test experimental features.",
+  "steps": [
+    {
+      "id": "process_uploaded_files",
+      "inputs": {}
+    },
+    {
+      "id": "fetch_html_and_screenshot",
+      "inputs": {}
+    },
+    {
+      "id": "generate_image_captions",
+      "inputs": {
+        "images": "process_uploaded_files.images"
+      }
+    },
+    {
+      "id": "generate_bootstrap_page_html",
+      "inputs": {
+        "text_content": "process_uploaded_files.text_content",
+        "images": "process_uploaded_files.images",
+        "captions": "generate_image_captions.captions",
+        "screenshot": "fetch_html_and_screenshot.screenshot"
+      }
+    },
+    {
+      "id": "create_page_from_html",
+      "inputs": {
+        "html": "generate_bootstrap_page_html.html",
+        "images": "process_uploaded_files.images"
+      }
+    }
+  ]
+}

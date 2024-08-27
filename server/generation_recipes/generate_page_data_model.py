@@ -29,10 +29,9 @@ def generate_dalle_image(dalle, prompt, url_mapping, job_folder):
         f.write(data)
 
     url_hash = hashlib.md5(data_url.encode()).hexdigest()
-    image_url = f"/{job_folder}/{url_hash}.png"
-    url_mapping.update({image_url: data_url})
+    url_mapping.update({url_hash: data_url})
 
-    return url_hash
+    return f"/{job_folder}/{url_hash}.png"
 
 
 def background_image_generator(dalle, url_mapping, job_folder):
@@ -52,7 +51,7 @@ def background_image_generator(dalle, url_mapping, job_folder):
     return generate_image
 
 
-def generate_page_data_model(job_folder: str, markdown_content: List[str], screenshot: bytes, page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str], image_captions: Dict[str, str]) -> str:
+def generate_page_data_model(job_folder: str, screenshot: bytes, page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str], image_captions: Dict[str, str]) -> str:
     try:
         root_schema_file = "server/generation_recipes/component_schemas/page.json"
         bundled_schema = bundle_schemas(root_schema_file)
@@ -109,6 +108,9 @@ def generate_page_data_model(job_folder: str, markdown_content: List[str], scree
         print(generated_data)
 
         validate(instance=json.loads(generated_data), schema=bundled_schema)
+
+        # Update the URL mapping with the generated image URLs
+        uploaded_images.update(url_mapping)
 
         return generated_data
 

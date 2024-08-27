@@ -2,19 +2,17 @@ import asyncio
 
 from server.generation_recipes.base_recipe import BaseGenerationRecipe
 from server.generation_recipes.create_page_brief import create_page_brief
-from server.generation_recipes.create_page_from_data_model import create_page_from_data_model
-from server.generation_recipes.create_page_narrative import create_page_narrative
+from server.generation_recipes.create_page_from_html import create_page_from_html
+from server.generation_recipes.generate_page_html_using_bootstrap_css import generate_page_html_using_bootstrap_css
 from server.generation_recipes.refine_user_intent import refine_user_intent
 from server.generation_recipes.generate_image_captions import generate_image_captions
-from server.generation_recipes.generate_page_data_model import generate_page_data_model
 from server.generation_recipes.load_images_from_files import load_images_from_files
 from server.job_manager import JobStatus, Job
 from server.generation_recipes.extract_markdown_and_images import extract_markdown_and_images
 from server.generation_recipes.fetch_html_and_screenshot import fetch_html_and_screenshot
-from server.generation_recipes.infer_values_and_generate_css import infer_css_vars
 
 
-class StandardGenerationRecipe(BaseGenerationRecipe):
+class BootstrapCssGenerationRecipe(BaseGenerationRecipe):
     def __init__(self, job_id, job_folder, uploaded_files, user_intent, website_url):
         super().__init__(job_id)
         self.job_folder = job_folder
@@ -24,15 +22,15 @@ class StandardGenerationRecipe(BaseGenerationRecipe):
 
     @staticmethod
     def get_id():
-        return 'standard_generation_recipe'
+        return 'bootstrap_css_generation_recipe'
 
     @staticmethod
     def name():
-        return 'Standard'
+        return 'Bootstrap'
 
     @staticmethod
     def description():
-        return 'A standard generation recipe that generates a webpage based on user intent and uploaded documents.'
+        return 'A generation recipe that generates a webpage with Bootstrap CSS.'
 
     async def run(self):
         try:
@@ -73,29 +71,18 @@ class StandardGenerationRecipe(BaseGenerationRecipe):
             print(image_captions)
             print(page_brief)
 
-            # Group 3: Schedule tasks concurrently and update status
-            self.set_status(JobStatus.PROCESSING, 'Scheduling page narrative creation and CSS inference...')
-            narrative_task = loop.run_in_executor(None, create_page_narrative, markdown_content, page_brief, enhanced_user_intent)
-            infer_css_task = loop.run_in_executor(None, infer_css_vars, screenshot)
-
-            # Await results from Group 3
-            page_narrative, inferred_css_vars = await asyncio.gather(narrative_task, infer_css_task)
-            self.set_status(JobStatus.PROCESSING, 'Page narrative and CSS variables inferred.')
-            print(page_narrative)
-            print(inferred_css_vars)
-
-            # Group 4: Schedule final tasks and update status
-            self.set_status(JobStatus.PROCESSING, 'Scheduling page data model generation...')
-            page_data_model = await loop.run_in_executor(
-                None, generate_page_data_model, self.job_folder, screenshot, page_brief, page_narrative, enhanced_user_intent, all_images, image_captions
+            # Group 3: Schedule final tasks and update status
+            self.set_status(JobStatus.PROCESSING, 'Scheduling page HTML generation...')
+            page_html = await loop.run_in_executor(
+                None, generate_page_html_using_bootstrap_css, self.job_folder, page_brief, all_images, image_captions, screenshot
             )
-            self.set_status(JobStatus.PROCESSING, 'Page data model generated.')
-            print(page_data_model)
+            self.set_status(JobStatus.PROCESSING, 'Page HTML generated.')
+            print(page_html)
 
             self.set_status(JobStatus.PROCESSING, 'Scheduling page save operation...')
-            await loop.run_in_executor(None, create_page_from_data_model, self.job_folder, page_data_model, inferred_css_vars, all_images)
+            await loop.run_in_executor(None, create_page_from_html, self.job_folder, page_html, all_images)
             self.set_status(JobStatus.COMPLETED, 'Page saved.')
 
         except Exception as e:
             print(e)
-            self.set_status(JobStatus.ERROR, f'An error occurred: {e}')
+            self.set_status(JobStatus.ERROR, error=str(e))

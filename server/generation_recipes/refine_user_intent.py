@@ -1,12 +1,12 @@
 from server.shared.llm import parse_markdown_output, LlmClient, ModelType
 
 
-def enhance_user_intent(user_intent: str) -> str:
-    print("Enhancing user intent...")
+def refine_user_intent(user_intent: str) -> str:
+    print("Refining user intent...")
 
     try:
         prompt = f'''
-            Your task is to enhance the user's intent with a more detailed and engaging description.
+            Your task is to refine the user's intent with a more detailed and engaging description.
             Be creative and imaginative in your response, expanding on the user's initial intent:
             {user_intent}
             
