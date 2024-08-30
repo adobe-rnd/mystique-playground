@@ -1,0 +1,23 @@
+{
+  "id": "standard_pipeline",
+  "name": "Standard Pipeline",
+  "description": "This pipeline is used to generate a page using a data model.",
+  "inputs": [
+    "uploaded_files",
+    "user_intent",
+    "website_url"
+  ],
+  "steps": [
+    {
+      "id": "standard_generation_step",
+      "inputs": {
+        "uploaded_files": "inputs.uploaded_files",
+        "user_intent": "inputs.user_intent",
+        "website_url": "inputs.website_url"
+      }
+    }
+  ],
+  "outputs": {
+      "urls": "standard_generation_step.urls"
+  }
+}

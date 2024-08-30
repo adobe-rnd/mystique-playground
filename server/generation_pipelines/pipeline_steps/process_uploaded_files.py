@@ -7,13 +7,8 @@ import mammoth
 from docx import Document
 from PIL import Image
 import io
-from server.generation_recipes.base_pipeline_step import BasePipelineStep
 
-
-@dataclass
-class TextContentAndImages:
-    text_content: str
-    images: Dict[str, str]
+from server.pipeline_step import StepResultDict, PipelineStep
 
 
 def extract_images_from_docx(docx_file_path: str) -> Dict[str, str]:
@@ -91,14 +86,20 @@ def load_images_from_files(file_paths: List[str]) -> Dict[str, str]:
     return hash_map
 
 
-class ProcessUploadedFilesStep(BasePipelineStep):
+@dataclass
+class TextContentAndImages:
+    text_content: str
+    images: StepResultDict[str]
+
+
+class ProcessUploadedFilesStep(PipelineStep):
     @staticmethod
     def get_unique_id() -> str:
         return "process_uploaded_files"
 
     @staticmethod
     def get_name() -> str:
-        return "Process Uploaded Files"
+        return "Process Uploads"
 
     @staticmethod
     def get_description() -> str:
@@ -106,13 +107,13 @@ class ProcessUploadedFilesStep(BasePipelineStep):
 
     def process(self, uploaded_files: List[str], **kwargs: Any) -> TextContentAndImages:
         # Update the job status at the start of processing
-        self.update_status("Starting extraction of markdown content and images...")
+        self.push_update("Starting extraction of markdown content and images...")
 
         # Extract markdown and images from DOCX files
         text_content, images = extract_markdown_and_images(uploaded_files)
 
         # Update status after DOCX processing
-        self.update_status(f"Processed {len(uploaded_files)} uploaded DOCX files.")
+        self.push_update(f"Processed {len(uploaded_files)} uploaded DOCX files.")
 
         # Load additional images from uploaded files
         uploaded_images = load_images_from_files(uploaded_files)
@@ -121,8 +122,8 @@ class ProcessUploadedFilesStep(BasePipelineStep):
         images.update(uploaded_images)
 
         # Update status after processing
-        self.update_status(f"Processed {len(uploaded_files)} uploaded files.")
-        self.update_status(f"Extracted {len(images)} images.")
-        self.update_status(f"Extracted {len(text_content)} markdown content blocks.")
+        self.push_update(f"Processed {len(uploaded_files)} uploaded files.")
+        self.push_update(f"Extracted {len(images)} images.")
+        self.push_update(f"Extracted {len(text_content)} markdown content blocks.")
 
         return TextContentAndImages(text_content="\n".join(text_content), images=images)

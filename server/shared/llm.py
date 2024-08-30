@@ -16,8 +16,7 @@ import yaml
 import inspect
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from server.generation_recipes.read_schemas import bundle_schemas
-from server.shared.dalle import DalleClient
+from server.generation_pipelines.legacy_pipelines.read_schemas import bundle_schemas
 
 load_dotenv()
 
@@ -291,7 +290,7 @@ class LlmClient:
 
 if __name__ == "__main__":
     llm = LlmClient(model=ModelType.GPT_4_OMNI)
-    json_schema = bundle_schemas("../generation_recipes/component_schemas/page.json")
+    json_schema = bundle_schemas("../generation_pipelines/component_schemas/page.json")
 
     def generate_image(prompt):
         """

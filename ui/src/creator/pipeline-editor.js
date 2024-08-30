@@ -7,6 +7,8 @@ import { LitPlugin, Presets } from "@retejs/lit-plugin";
 import { AutoArrangePlugin, Presets as ArrangePresets, ArrangeAppliers } from "rete-auto-arrange-plugin";
 
 import '@spectrum-web-components/picker/sp-picker.js';
+import '@spectrum-web-components/button/sp-button.js';
+import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 
 @customElement('pipeline-editor')
 class PipelineEditor extends LitElement {
@@ -23,12 +25,36 @@ class PipelineEditor extends LitElement {
       display: flex;
       gap: 10px;
     }
+    .warning {
+      color: red;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .center-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .icon {
+      font-size: 48px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .progress-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
   `;
   
   @state() accessor pipelineData = null;
   @state() accessor stepsData = null;
   @state() accessor pipelines = [];
   @state() accessor selectedPipeline = '';
+  @state() accessor loading = false;
   
   socket = null;
   editor = null;
@@ -37,11 +63,7 @@ class PipelineEditor extends LitElement {
   
   async firstUpdated() {
     await this.fetchPipelines();
-    this.selectedPipeline = this.pipelines[0]?.id || '';
-    await this.fetchPipelineData();
     await this.fetchStepsData();
-    await this.initializeEditor();
-    await this.createPipeline();
   }
   
   async fetchPipelines() {
@@ -50,6 +72,7 @@ class PipelineEditor extends LitElement {
   }
   
   async fetchPipelineData() {
+    if (!this.selectedPipeline) return;
     const response = await fetch(`http://localhost:4003/pipeline/${this.selectedPipeline}`);
     this.pipelineData = await response.json();
   }
@@ -89,6 +112,7 @@ class PipelineEditor extends LitElement {
   }
   
   async createPipeline() {
+    if (!this.editor) await this.initializeEditor();
     const nodesMap = new Map();
     
     for (const step of this.pipelineData.steps) {
@@ -105,22 +129,25 @@ class PipelineEditor extends LitElement {
       Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
         const [sourceNodeId, outputName] = inputValue.split('.');
         const sourceNode = nodesMap.get(sourceNodeId);
-        console.log(`Connecting ${sourceNodeId}:${outputName} to ${step.id}:${inputName}`);
         if (sourceNode) {
           this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
         }
       });
     }
     
+    this.loading = true; // Show progress indicator
+    
     setTimeout(() => {
       this.autoArrange();
       setTimeout(() => {
         this.autoZoom();
+        this.loading = false; // Hide progress indicator
       }, 1000);
-    }, 200);
+    }, 300);
   }
- 
+  
   async deletePipeline() {
+    if (!this.editor) return;
     await this.editor.clear();
   }
   
@@ -133,12 +160,10 @@ class PipelineEditor extends LitElement {
     
     const node = new ClassicPreset.Node(nodeNameWithEllipsis);
     
-    // Create inputs based on the step details
     for (const inputName of stepDetails.inputs || []) {
       node.addInput(inputName, new ClassicPreset.Input(socket, inputName));
     }
     
-    // Create outputs based on the step details
     for (const outputName of stepDetails.outputs || []) {
       node.addOutput(outputName, new ClassicPreset.Output(socket, outputName));
     }
@@ -152,13 +177,12 @@ class PipelineEditor extends LitElement {
   
   async autoArrange() {
     const nodes = this.editor.getNodes();
-    const grid = 250; // Horizontal grid size (distance between columns)
-    const margin = 50; // Vertical margin between nodes
-    const positions = new Map(); // To store node positions
-    const processedNodes = new Set(); // To keep track of arranged nodes
-    const levels = new Map(); // To track which level each node belongs to
+    const grid = 250;
+    const margin = 50;
+    const positions = new Map();
+    const processedNodes = new Set();
+    const levels = new Map();
     
-    // Helper function to find nodes without inputs (root nodes)
     const findRootNodes = () => {
       const connections = this.editor.getConnections();
       return nodes.filter(node => {
@@ -167,18 +191,15 @@ class PipelineEditor extends LitElement {
       });
     };
     
-    // Recursive function to arrange nodes
     const arrangeNode = (node, depth = 0) => {
       if (processedNodes.has(node.id)) return;
       processedNodes.add(node.id);
       
-      // Assign the node to its level
       if (!levels.has(depth)) {
         levels.set(depth, []);
       }
       levels.get(depth).push(node);
       
-      // Get output connections and arrange connected nodes
       const outputs = this.editor.getConnections().filter(conn => conn.source === node.id);
       for (const output of outputs) {
         const childNode = nodes.find(n => n.id === output.target);
@@ -186,11 +207,9 @@ class PipelineEditor extends LitElement {
       }
     };
     
-    // Start arranging from root nodes
     const rootNodes = findRootNodes();
     rootNodes.forEach(rootNode => arrangeNode(rootNode));
     
-    // Calculate vertical positioning and apply positions
     for (let [depth, nodesAtDepth] of levels.entries()) {
       const totalHeight = (nodesAtDepth.length - 1) * (grid + margin);
       let currentY = -totalHeight / 2;
@@ -203,7 +222,6 @@ class PipelineEditor extends LitElement {
       }
     }
     
-    // Apply the calculated positions
     for (const node of nodes) {
       const position = positions.get(node.id);
       await this.area.translate(node.id, position);
@@ -212,8 +230,12 @@ class PipelineEditor extends LitElement {
   
   async handlePipelineChange(event) {
     this.selectedPipeline = event.target.value;
-    await this.fetchPipelineData();
+    if (!this.selectedPipeline) {
+      alert('Please select a pipeline to load.');
+      return;
+    }
     await this.deletePipeline();
+    await this.fetchPipelineData();
     await this.createPipeline();
   }
   
@@ -230,7 +252,20 @@ class PipelineEditor extends LitElement {
           `)}
         </sp-picker>
       </div>
-      <div id="pipelineContainer"></div>
+      <div id="pipelineContainer">
+        ${this.loading ? html`
+        <div class="progress-container">
+          <sp-progress-circle size="large" indeterminate></sp-progress-circle>
+        </div>
+      ` : html`
+        ${!this.selectedPipeline ? html`
+          <div class="center-message">
+            <div class="icon">⚠️</div>
+            <div>Please select a pipeline to load.</div>
+          </div>
+        ` : ''}
+      `}
+      </div>
     `;
   }
 }

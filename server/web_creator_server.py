@@ -3,61 +3,50 @@ import json
 import signal
 import threading
 import time
-import importlib.util
 
 from flask import Flask, jsonify, request, Response, Blueprint, send_from_directory
 import os
 
 from flask_cors import CORS
 
-from server.generation_recipes.base_recipe import BaseGenerationRecipe
 from server.job_manager import JobManager, JobStatus
+from server.pipeline import Pipeline
 from server.pipeline_metadata_extractor import PipelineMetadataExtractor
 from server.shared.file_utils import handle_file_upload
 
-RECIPE_FOLDER_PATH = "server/generation_recipes"
-PIPELINE_FOLDER_PATH = "server/generation_recipes/pipelines"
-PIPELINE_STEP_FOLDER_PATH = "server/generation_recipes/pipeline_steps"
+PIPELINE_FOLDER_PATH = "server/generation_pipelines/pipelines"
+PIPELINE_STEP_FOLDER_PATH = "server/generation_pipelines/pipeline_steps"
 
 UPLOAD_FOLDER = 'uploads'
 GENERATED_FOLDER = 'generated'
 
 
-def load_generation_recipes_from_folder(folder_path):
-    recipes = {}
+def load_pipelines_from_folder(folder_path):
+    pipelines = {}
     for filename in os.listdir(folder_path):
-        if filename.endswith(".py") and filename != "__init__.py":
-            module_name = filename[:-3]
-            module_path = os.path.join(folder_path, filename)
-
-            # Dynamically load the module
-            spec = importlib.util.spec_from_file_location(module_name, module_path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            # Find all subclasses of BaseGenerationRecipe in the module
-            for obj in module.__dict__.values():
-                if isinstance(obj, type) and issubclass(obj, BaseGenerationRecipe) and obj is not BaseGenerationRecipe:
-                    recipe_id = obj.get_id()
-                    print(f"Loading recipe: {recipe_id}")
-                    recipes[recipe_id] = {
-                        "name": obj.name(),
-                        "description": obj.description(),
-                        "class": obj
-                    }
-    return recipes
+        if filename.endswith(".json"):
+            with open(os.path.join(folder_path, filename)) as f:
+                config = json.load(f)
+                pipeline_id = config["id"]
+                print(f"Loading pipeline: {pipeline_id}")
+                pipelines[pipeline_id] = {
+                    "name": config["name"],
+                    "description": config["description"],
+                    "config": config
+                }
+    return pipelines
 
 
 class WebCreator:
     def __init__(self):
-        self.app = Flask(__name__, static_folder='./generation_recipes/components', static_url_path='/static')
+        self.app = Flask(__name__, static_folder='./generation_pipelines/components', static_url_path='/static')
         self.app.register_blueprint(Blueprint('generated', __name__, static_folder='../generated'))
         self.job_manager = JobManager()
         self.register_routes()
-        self.recipes = load_generation_recipes_from_folder(RECIPE_FOLDER_PATH)
+        self.pipelines = load_pipelines_from_folder(PIPELINE_FOLDER_PATH)
         self.pipeline_metadata_extractor = PipelineMetadataExtractor(PIPELINE_STEP_FOLDER_PATH)
 
-        print(self.recipes)
+        print(self.pipelines)
 
         CORS(self.app)
 
@@ -71,7 +60,6 @@ class WebCreator:
         self.app.add_url_rule('/ok', view_func=self.ok, methods=['GET'])
         self.app.add_url_rule('/generate', view_func=self.generate, methods=['POST'])
         self.app.add_url_rule('/status/<job_id>', view_func=self.job_status_stream, methods=['GET'])
-        self.app.add_url_rule('/recipes', view_func=self.get_generation_recipes, methods=['GET'])
         self.app.add_url_rule('/pipelines', view_func=self.get_pipelines, methods=['GET'])
         self.app.add_url_rule('/pipeline/<pipeline_id>', view_func=self.get_pipeline_by_id, methods=['GET'])
         self.app.add_url_rule('/pipeline-steps', view_func=self.get_pipeline_steps, methods=['GET'])
@@ -87,13 +75,39 @@ class WebCreator:
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
+    def create_pipeline(self, pipeline_id, job_id, job_folder, initial_params):
+        print(f"Creating pipeline: {pipeline_id}")
+        pipeline = self.pipelines.get(pipeline_id)
+        if not pipeline:
+            raise ValueError(f"Pipeline not found: {pipeline_id}")
+
+        config = pipeline.get('config')
+        print(f"Pipeline config: {config}")
+
+        print(f"Initial params: {initial_params}")
+
+        pipeline_context={
+            'job_id': job_id,
+            'job_folder': job_folder,
+        }
+        print(f"Pipeline context: {pipeline_context}")
+
+        pipeline = Pipeline(job_id=job_id, config=config, steps_folder='server/generation_pipelines/pipeline_steps', initial_params=initial_params, pipeline_context=pipeline_context)
+
+        print(f"Pipeline created: {pipeline}")
+
+        return pipeline
+
     def generate(self):
         try:
+            pipeline_id = request.form.get("pipelineId")
             user_intent = request.form.get("intent")
             website_url = request.form.get("websiteUrl")
-            recipe = request.form.get("recipe")
-            print(user_intent, website_url, recipe)
             file_paths = handle_file_upload(request.files, UPLOAD_FOLDER)
+            print(f"Pipeline ID: {pipeline_id}")
+            print(f"Uploaded files: {file_paths}")
+            print(f"User intent: {user_intent}")
+            print(f"Website URL: {website_url}")
 
             job_id = self.job_manager.generate_job_id()
             print(f"Job ID: {job_id}")
@@ -103,17 +117,21 @@ class WebCreator:
             os.makedirs(job_folder, exist_ok=True)
             print(f"Job folder created: {job_folder}")
 
-            # instantiate the class based on the recipe or return error if recipe not found
-            job_class = self.recipes.get(recipe)
-            if not job_class:
-                return jsonify({"error": "Recipe not found"}), 400
+            params={
+                "uploaded_files": file_paths,
+                "user_intent": user_intent,
+                "website_url": website_url
+            }
 
-            job = job_class["class"](job_id, job_folder, file_paths, user_intent, website_url)
+            job = self.create_pipeline(pipeline_id, job_id, job_folder, params)
+
+            print(f"Adding job to manager: {job}")
 
             self.job_manager.add_job(job)
 
             return jsonify({"job_id": job_id}), 200
         except Exception as e:
+            print(e)
             return jsonify({"error": str(e)}), 400
 
     def job_status_stream(self, job_id):
@@ -137,6 +155,13 @@ class WebCreator:
                         "status": job.status.value,
                         "updates": updates
                     }
+                    # If the job is completed, send the result as well
+                    if job.status == JobStatus.COMPLETED:
+                        result = job.result
+                        print(f"Job result: {result}")
+                        url = list(job.result.get('urls').values())
+                        print(f"Sending URL: {url}")
+                        data["result"] = url
                     print(f"Sending new updates: {data}")
                     yield f"data: {json.dumps(data)}\n\n"
 
@@ -148,11 +173,6 @@ class WebCreator:
                 time.sleep(0.3)  # Adjust sleep time as necessary
 
         return Response(generate(), mimetype='text/event-stream')
-
-    def get_generation_recipes(self):
-        print("get_generation_recipes")
-        print(self.recipes)
-        return jsonify([{"id": key, "name": value["name"], "description": value["description"]} for key, value in self.recipes.items()])
 
     def get_pipeline_steps(self):
         return jsonify([step for step in self.pipeline_metadata_extractor.extract_pipeline_steps()])
@@ -169,12 +189,12 @@ class WebCreator:
 
     @staticmethod
     def get_pipeline_by_id(pipeline_id):
-        pipeline_path = os.path.join(PIPELINE_FOLDER_PATH, f"{pipeline_id}.json")
-        if not os.path.exists(pipeline_path):
+        pipeline = load_pipelines_from_folder(PIPELINE_FOLDER_PATH).get(pipeline_id)
+        if not pipeline:
             return jsonify({"error": "Pipeline not found"}), 404
-        with open(pipeline_path) as f:
-            pipeline = json.load(f)
-        return jsonify(pipeline)
+        config = pipeline.get('config')
+        print(f"Pipeline config: {config}")
+        return jsonify(config)
 
     @staticmethod
     def get_generated_pages():

@@ -5,13 +5,9 @@ from PIL import Image
 import base64
 import io
 
+from server.pipeline_step import StepResultDict, PipelineStep
 from server.shared.llm import LlmClient, ModelType
-from server.generation_recipes.base_pipeline_step import BasePipelineStep
 
-
-@dataclass
-class ImageCaptions:
-    captions: Dict[str, str]
 
 def resize_image(image_data: str, max_size=(128, 128)) -> str:
     try:
@@ -62,26 +58,31 @@ def generate_caption_for_image(image_hash: str, data_url: str, llm) -> Dict[str,
     return {image_hash: caption.strip()}
 
 
-class GenerateImageCaptionsStep(BasePipelineStep):
+@dataclass
+class ImageCaptions:
+    captions: StepResultDict[str]
+
+
+class GenerateImageCaptionsStep(PipelineStep):
     @staticmethod
     def get_unique_id() -> str:
         return "generate_image_captions"
 
     @staticmethod
     def get_name() -> str:
-        return "Generate Image Captions"
+        return "Image Captions"
 
     @staticmethod
     def get_description() -> str:
-        return "Generate captions for images using a language model."
+        return "Generate captions for the provided images."
 
     def process(self, images: Dict[str, str]) -> ImageCaptions:
-        self.update_status("Starting image caption generation...")
+        self.push_update("Starting image caption generation...")
 
         captions = {}
         llm = LlmClient(model=ModelType.GPT_4_OMNI)
 
-        self.update_status("Submitting tasks to generate captions for each image...")
+        self.push_update("Submitting tasks to generate captions for each image...")
 
         with ThreadPoolExecutor() as executor:
             future_to_image = {
@@ -95,8 +96,8 @@ class GenerateImageCaptionsStep(BasePipelineStep):
                     captions.update(result)
                 except Exception as e:
                     print(f"Error generating caption: {e}")
-                    self.update_status(f"Error generating caption for an image: {e}")
+                    self.push_update(f"Error generating caption for an image: {e}")
 
-        self.update_status("Image caption generation completed.")
+        self.push_update("Image caption generation completed.")
 
         return ImageCaptions(captions=captions)

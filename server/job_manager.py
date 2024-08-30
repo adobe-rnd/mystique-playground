@@ -18,20 +18,28 @@ class Job(ABC):
         self.job_id = job_id
         self.status = JobStatus.QUEUED
         self.updates = [{"message": "Job queued. Processing will start soon..."}]
+        self.result = None  # To store the result of the job
 
     @abstractmethod
     async def run(self):
+        """Abstract method that must be implemented to perform the job task.
+        Should return a result that will be stored after job completion."""
         pass
 
-    def set_status(self, status, message, **kwargs):
+    def set_status(self, status):
         self.status = status
-        print(f"Job {self.job_id} status: {status.value} - {message}")  # Log status update
+
+    def push_update(self, message, **kwargs):
+        print(f"Job {self.job_id} update: {message}")  # Log job updates
         if message:
             update = {'message': message}
             update.update(kwargs)
             self.updates.append(update)
         else:
             self.updates.append({'message': 'Ugh! Something went wrong...'})
+
+    def set_result(self, result):
+        self.result = result
 
 
 class JobManager:
@@ -53,14 +61,19 @@ class JobManager:
     async def worker_loop(self):
         while True:
             job = await self.job_queue.get()
-            job.set_status(JobStatus.PROCESSING, 'Job processing started')
+            job.set_status(JobStatus.PROCESSING)
+            job.push_update('Job processing started')
             try:
-                await job.run()
-                print(f"Job {job.job_id} processing completed successfully")
-                job.set_status(JobStatus.COMPLETED, 'Job processing completed successfully')
+                # Run the job and store its result
+                result = await job.run()
+                print(f"Job {job.job_id} processing completed successfully with result: {result}")
+                job.set_result(result)
+                job.set_status(JobStatus.COMPLETED)
+                job.push_update('Job processing completed successfully')
             except Exception as e:
                 print(f"Job {job.job_id} processing failed: {e}")
-                job.set_status(JobStatus.ERROR, f'Job processing failed: {e}')
+                job.set_status(JobStatus.ERROR)
+                job.push_update(f'Job processing failed: {e}')
             finally:
                 print(f"Removing job {job.job_id} from queue")
                 self.job_queue.task_done()
@@ -73,6 +86,13 @@ class JobManager:
 
     def get_job_status(self, job_id):
         return self.job_status.get(job_id)
+
+    def get_job_result(self, job_id):
+        """Retrieve the result of a completed job by its ID."""
+        job = self.job_status.get(job_id)
+        if job and job.status == JobStatus.COMPLETED:
+            return job.result
+        return None
 
     def generate_job_id(self):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=12))

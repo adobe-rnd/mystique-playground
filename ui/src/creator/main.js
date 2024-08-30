@@ -286,40 +286,41 @@ class MyFirstComponent extends LitElement {
     }
   `;
   
+  @state() accessor activeTab = 'new-page';
+  
   @state() accessor files = [];
-  @state() accessor websiteUrl = '';
-  @state() accessor recipe = '';
-  @state() accessor recipeOptions = [];
   @state() accessor intent = DEFAULT_INTENT;
-  @state() accessor messages = [];
+  @state() accessor websiteUrl = '';
+
+  @state() accessor pipelines = [];
+  @state() accessor selectedPipeline = '';
+  
   @state() accessor jobId = '';
   @state() accessor status = null;
-  @state() accessor activeTab = 'new-page';
+  @state() accessor messages = [];
+  @state() accessor result = null;
+
   @state() accessor generatedPages = [];
   
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
-    this.fetchRecipes();
-    this.fetchGeneratedPages();
+    await this.fetchPipelines();
+    await this.fetchGeneratedPages();
   }
   
   setActiveTab(tab) {
     this.activeTab = tab;
   }
   
-  fetchRecipes() {
-    wretch('http://localhost:4003/recipes')
-      .get()
-      .json()
-      .then((recipes) => {
-        this.recipeOptions = recipes;
-        if (recipes.length > 0) {
-          this.recipe = recipes[0].id;
-        }
-      });
+  async fetchPipelines() {
+    const response = await fetch('http://localhost:4003/pipelines');
+    this.pipelines = await response.json();
+    if (this.pipelines.length > 0) {
+      this.selectedPipeline = this.pipelines[0].id;
+    }
   }
   
-  fetchGeneratedPages() {
+  async fetchGeneratedPages() {
     wretch('http://localhost:4003/generated')
       .get()
       .json()
@@ -372,10 +373,10 @@ class MyFirstComponent extends LitElement {
     this.clearFileInput();
   }
   
-  handleRecipeChange(event) {
-    const selectedRecipeName = event.target.value;
-    const selectedRecipe = this.recipeOptions.find(recipe => recipe.name === selectedRecipeName);
-    this.recipe = selectedRecipe ? selectedRecipe.id : '';
+  handlePipelineChange(event) {
+    const selectedPipelineName = event.target.value;
+    const selectedPipeline = this.pipelines.find(pipeline => pipeline.name === selectedPipelineName);
+    this.selectedPipeline = selectedPipeline.id;
   }
   
   handleUrlChange(event) {
@@ -386,14 +387,17 @@ class MyFirstComponent extends LitElement {
     return this.files.length === 0 || !this.websiteUrl || this.status === 'processing' || this.recipe === '';
   }
   
-  getRecipeName() {
-    const selectedRecipe = this.recipeOptions.find(recipe => recipe.id === this.recipe);
-    return selectedRecipe ? selectedRecipe.name : '';
+  getPipelineName() {
+    const pipelineId = this.selectedPipeline;
+    const pipeline = this.pipelines.find(pipeline => pipeline.id === pipelineId);
+    return pipeline ? pipeline.name : '';
   }
   
   async generate() {
-    this.messages = [];
+    this.jobId = null;
     this.status = null;
+    this.messages = [];
+    this.result = null;
     
     if (this.files.length === 0 && !this.websiteUrl) {
       this.addMessage('No files or URL to process.');
@@ -403,9 +407,9 @@ class MyFirstComponent extends LitElement {
     this.addMessage('Uploading data...');
     const formData = new FormData();
     this.files.forEach(file => formData.append('files', file));
+    formData.append('pipelineId', this.selectedPipeline);
     formData.append('intent', this.intent);
     formData.append('websiteUrl', this.websiteUrl);
-    formData.append('recipe', this.recipe);
     
     try {
       const result = await wretch('http://localhost:4003/generate')
@@ -440,7 +444,9 @@ class MyFirstComponent extends LitElement {
       }
       if (data.status === 'completed') {
         this.addMessage('Job completed successfully!');
+        this.result = data.result;
         this.status = 'completed';
+        this.fetchGeneratedPages();
       } else if (data.status === 'error') {
         this.addMessage('Job failed with an error!');
         this.status = 'error';
@@ -471,8 +477,8 @@ class MyFirstComponent extends LitElement {
     }, 300);
   }
   
-  previewMarkup(jobId) {
-    window.open(`http://localhost:4003/preview/${jobId}`, '_blank');
+  previewMarkup() {
+    window.open(this.result, '_blank');
   }
   
   deletePage(pageId) {
@@ -488,6 +494,8 @@ class MyFirstComponent extends LitElement {
   }
   
   renderNewPageGeneration() {
+    console.log('Selected pipeline:', this.selectedPipeline);
+    
     return html`
       <div class="tab-content ${this.activeTab === 'new-page' ? 'active' : ''}">
         <div class="documents-container">
@@ -543,9 +551,9 @@ class MyFirstComponent extends LitElement {
         <div class="inputs-container">
           <div class="section-title">Step 4: Choose the Cooking Recipe</div>
           <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
-          <sp-combobox placeholder="Select a recipe" .value=${this.getRecipeName()} @change="${this.handleRecipeChange}">
-            ${this.recipeOptions.map((recipe) => html`
-              <sp-menu-item value="${recipe.name}">${recipe.name}</sp-menu-item>
+          <sp-combobox placeholder="Select a recipe" .value=${this.getPipelineName()} @change="${this.handlePipelineChange}">
+            ${this.pipelines.map((pipeline) => html`
+              <sp-menu-item value="${pipeline.id}">${pipeline.name}</sp-menu-item>
             `)}
           </sp-combobox>
         </div>

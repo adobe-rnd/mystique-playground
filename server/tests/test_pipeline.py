@@ -9,7 +9,7 @@ from server.pipeline import Pipeline
 class TestPipeline(unittest.TestCase):
     def setUp(self):
         # Prepare the pipeline with the correct steps folder path
-        self.pipeline = Pipeline(steps_folder="pipeline_steps", runtime_dependencies={})
+        self.pipeline = Pipeline(,
 
         # Inline JSON configuration for the test
         self.config = {

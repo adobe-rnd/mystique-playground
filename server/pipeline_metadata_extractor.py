@@ -97,5 +97,5 @@ def extract_pipeline_metadata(root_folder: str) -> str:
 
 # Example usage
 if __name__ == "__main__":
-    root_folder = "server/generation_recipes/pipeline_steps"
+    root_folder = "server/generation_pipelines/pipeline_steps"
     print(extract_pipeline_metadata(root_folder))

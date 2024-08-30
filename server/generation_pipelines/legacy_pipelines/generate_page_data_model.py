@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from jsonschema.validators import validate
 
-from server.generation_recipes.read_schemas import bundle_schemas
+from server.generation_pipelines.legacy_pipelines.read_schemas import bundle_schemas
 from server.shared.dalle import DalleClient
 from server.shared.llm import LlmClient, ModelType, parse_markdown_output
 
@@ -53,7 +53,7 @@ def background_image_generator(dalle, url_mapping, job_folder):
 
 def generate_page_data_model(job_folder: str, screenshot: bytes, page_brief: str, page_narrative: str, user_intent: str, uploaded_images: Dict[str, str], image_captions: Dict[str, str]) -> str:
     try:
-        root_schema_file = "server/generation_recipes/component_schemas/page.json"
+        root_schema_file = "server/generation_pipelines/component_schemas/page.json"
         bundled_schema = bundle_schemas(root_schema_file)
 
         url_mapping = {}

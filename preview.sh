@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start a local server to preview the reference page
-cd server/generation_recipes/components || exit
+cd server/generation_pipelines/components || exit
 
 # Run the Python server in the background and capture the process ID (PID)
 python -m http.server 8000 &

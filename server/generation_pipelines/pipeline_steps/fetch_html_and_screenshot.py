@@ -1,18 +1,10 @@
 from dataclasses import dataclass
-from io import BytesIO
-from typing import Any
-from PIL import Image
 from bs4 import BeautifulSoup
+
+from server.pipeline_step import PipelineStep
 from server.shared.image import crop_and_downscale_image
 from server.shared.llm import LlmClient, ModelType, parse_markdown_output
 from server.shared.scraper import WebScraper
-from server.generation_recipes.base_pipeline_step import BasePipelineStep
-
-
-@dataclass
-class HtmlAndScreenshot:
-    html: str
-    screenshot: bytes
 
 
 def get_cleaned_buttons_and_links_with_essential_attributes(html_content: str) -> list[str]:
@@ -54,7 +46,13 @@ def get_cleaned_buttons_and_links_with_essential_attributes(html_content: str) -
     return cleaned_html_list
 
 
-class FetchHtmlAndScreenshotStep(BasePipelineStep):
+@dataclass
+class HtmlAndScreenshot:
+    html: str
+    screenshot: bytes
+
+
+class FetchHtmlAndScreenshotStep(PipelineStep):
     def __init__(self, job_folder: str, **kwargs):
         super().__init__(**kwargs)
         self.job_folder = job_folder
@@ -65,24 +63,24 @@ class FetchHtmlAndScreenshotStep(BasePipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Fetch HTML and Screenshot from Website"
+        return "Screenshot/HTML"
 
     @staticmethod
     def get_description() -> str:
-        return "Fetches HTML content from a website, identifies a consent button, and takes a cropped screenshot."
+        return "Fetch HTML content from a website and capture a screenshot of the page."
 
     async def process(self, website_url: str, **kwargs) -> HtmlAndScreenshot:
-        self.update_status("Starting HTML fetching and screenshot process...")
+        self.push_update("Starting HTML fetching and screenshot process...")
 
         scraper = WebScraper()
-        self.update_status(f"Fetching HTML content from {website_url}...")
+        self.push_update(f"Fetching HTML content from {website_url}...")
 
         html = await scraper.get_html(website_url)
 
-        self.update_status("Cleaning HTML content for LLM processing...")
+        self.push_update("Cleaning HTML content for LLM processing...")
         compressed_html = '\n'.join(get_cleaned_buttons_and_links_with_essential_attributes(html))
 
-        self.update_status("Identifying consent button using LLM...")
+        self.push_update("Identifying consent button using LLM...")
         llm = LlmClient(model=ModelType.GPT_4_OMNI)
 
         prompt = f"""
@@ -108,9 +106,9 @@ class FetchHtmlAndScreenshotStep(BasePipelineStep):
 
         llm_response = llm.get_completions(prompt, temperature=0.0)
         consent_button_selector = parse_markdown_output(llm_response, lang='css')
-        self.update_status(f"Identified consent button selector: {consent_button_selector}")
+        self.push_update(f"Identified consent button selector: {consent_button_selector}")
 
-        self.update_status("Taking screenshot and cropping the image...")
+        self.push_update("Taking screenshot and cropping the image...")
         original_screenshot = await scraper.get_screenshot(website_url, consent_popup_button_selector=consent_button_selector)
         screenshot = crop_and_downscale_image(original_screenshot, crop=True)
 
@@ -118,6 +116,6 @@ class FetchHtmlAndScreenshotStep(BasePipelineStep):
         with open(screenshot_path, 'wb') as f:
             f.write(screenshot)
 
-        self.update_status("Screenshot saved and process completed.")
+        self.push_update("Screenshot saved and process completed.")
 
         return HtmlAndScreenshot(html=html, screenshot=screenshot)

@@ -1,11 +1,19 @@
 {
-  "id": "experimental_pipeline",
-  "name": "Experimental Pipeline",
-  "description": "This pipeline is used to test experimental features.",
+  "id": "bootstrap_pipeline",
+  "name": "Bootstrap Pipeline",
+  "description": "This pipeline is used to generate a page using the Bootstrap framework.",
+  "inputs": [
+    "uploaded_files",
+    "user_intent",
+    "website_url"
+  ],
   "steps": [
     {
       "id": "process_uploaded_files",
-      "inputs": {}
+      "inputs": {
+        "uploaded_files": "inputs.uploaded_files",
+        "website_url": "inputs.website_url"
+      }
     },
     {
       "id": "fetch_html_and_screenshot",
@@ -33,5 +41,8 @@
         "images": "process_uploaded_files.images"
       }
     }
-  ]
+  ],
+  "outputs": {
+      "urls": "create_page_from_html.urls"
+  }
 }

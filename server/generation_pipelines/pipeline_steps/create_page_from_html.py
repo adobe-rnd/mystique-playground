@@ -1,14 +1,24 @@
 import base64
 import io
 import os
+from dataclasses import dataclass
 from typing import Dict, Any
 from PIL import Image
-from server.generation_recipes.base_pipeline_step import BasePipelineStep
+
+from server.pipeline_step import StepResultDict, PipelineStep
+
+PREVIEW_URL_TEMPLATE = "http://localhost:4003/preview/{jobId}"
 
 
-class CreatePageFromHtmlStep(BasePipelineStep):
-    def __init__(self, job_folder: str, **kwargs: Any):
+@dataclass
+class CreatedPage:
+    urls: StepResultDict[str]
+
+
+class CreatePageFromHtmlStep(PipelineStep):
+    def __init__(self, job_id: str, job_folder: str, **kwargs: Any):
         super().__init__(**kwargs)
+        self.job_id = job_id
         self.job_folder = job_folder
 
     @staticmethod
@@ -17,16 +27,16 @@ class CreatePageFromHtmlStep(BasePipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Create Page from HTML"
+        return "Save Page"
 
     @staticmethod
     def get_description() -> str:
-        return "Create a web page from the provided HTML content and save images."
+        return "This step creates an HTML page from the provided content and saves images."
 
     def process(self, html: str, images: Dict[str, str], **kwargs: Any):
         try:
             # Update status
-            self.update_status("Starting to create the page from HTML and saving images...")
+            self.push_update("Starting to create the page from HTML and saving images...")
 
             # Ensure the job folder exists
             os.makedirs(self.job_folder, exist_ok=True)
@@ -51,8 +61,12 @@ class CreatePageFromHtmlStep(BasePipelineStep):
             with open(os.path.join(self.job_folder, 'index.html'), 'w') as f:
                 f.write(html)
 
-            self.update_status("Page creation and image saving completed successfully.")
+            self.push_update("Page creation and image saving completed successfully.")
+
+            # Return the URLs of the saved images
+            page_url = PREVIEW_URL_TEMPLATE.format(jobId=self.job_id)
+            return CreatedPage(urls={"url0": page_url})
 
         except Exception as e:
-            self.update_status(f"An error occurred: {e}")
+            self.push_update(f"An error occurred: {e}")
             raise e

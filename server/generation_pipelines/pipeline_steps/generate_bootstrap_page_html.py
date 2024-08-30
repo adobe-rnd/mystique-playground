@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from server.generation_recipes.base_pipeline_step import BasePipelineStep
+from server.pipeline_step import PipelineStep
 from server.shared.llm import LlmClient, ModelType, parse_markdown_output
 
 
@@ -10,9 +10,11 @@ class GeneratedHtml:
     html: str
 
 
-class GenerateBootstrapPageHtmlStep(BasePipelineStep):
-    def __init__(self, job_folder: str, **kwargs: Any):
+class GenerateBootstrapPageHtmlStep(PipelineStep):
+    def __init__(self, job_folder: str, runs: int = 1, **kwargs: Any):
         super().__init__(**kwargs)
+        self.runs = runs
+        print(f"Number of runs: {runs}")
         self.job_folder = job_folder
 
     @staticmethod
@@ -21,11 +23,11 @@ class GenerateBootstrapPageHtmlStep(BasePipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Generate Bootstrap Page HTML"
+        return "Bootstrap HTML"
 
     @staticmethod
     def get_description() -> str:
-        return "Generate a responsive web page using Bootstrap CSS."
+        return "This step generates a responsive web page using Bootstrap CSS based on the provided content."
 
     def process(
             self,
@@ -37,7 +39,7 @@ class GenerateBootstrapPageHtmlStep(BasePipelineStep):
     ) -> GeneratedHtml:
         try:
             # Update the job status at the start of processing
-            self.update_status("Starting page HTML generation using Bootstrap CSS...")
+            self.push_update("Starting page HTML generation using Bootstrap CSS...")
 
             # Prepare image captions and hashes for the prompt
             image_info_list = []
@@ -82,15 +84,14 @@ class GenerateBootstrapPageHtmlStep(BasePipelineStep):
 
             # Initialize LLM client and get the HTML response
             client = LlmClient(model=ModelType.GPT_4_OMNI)
-            self.update_status("Sending request to the LLM for HTML generation...")
             llm_response = client.get_completions(prompt, temperature=1.0, image_list=[screenshot])
 
             # Parse the LLM output for HTML
             html = parse_markdown_output(llm_response, lang='html')
-            self.update_status("HTML generation completed successfully.")
+            self.push_update("HTML generation completed successfully.")
 
             return GeneratedHtml(html=html)
 
         except Exception as e:
-            self.update_status(f"An error occurred during HTML generation: {e}")
+            self.push_update(f"An error occurred during HTML generation: {e}")
             raise e
