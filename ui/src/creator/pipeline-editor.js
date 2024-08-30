@@ -4,49 +4,70 @@ import { NodeEditor, ClassicPreset } from "rete";
 import { AreaPlugin, AreaExtensions } from "rete-area-plugin";
 import { ConnectionPlugin, Presets as ConnectionPresets } from "rete-connection-plugin";
 import { LitPlugin, Presets } from "@retejs/lit-plugin";
-import { AutoArrangePlugin, Presets as ArrangePresets, ArrangeAppliers } from "rete-auto-arrange-plugin";
+import { AutoArrangePlugin, Presets as ArrangePresets } from "rete-auto-arrange-plugin";
 
 import '@spectrum-web-components/picker/sp-picker.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 
+import './side-rail.js';
+import { fetchPipelineData, fetchPipelines, fetchStepsData } from './pipeline-client';
+
 @customElement('pipeline-editor')
 class PipelineEditor extends LitElement {
   static styles = css`
-    #pipelineContainer {
+    #editorWrapper {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
       width: 100%;
-      height: 600px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      position: relative;
+      height: 100%;
     }
+
     #controls {
-      margin-bottom: 10px;
       display: flex;
       gap: 10px;
-    }
-    .warning {
-      color: red;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-    .center-message {
-      display: flex;
-      flex-direction: column;
       align-items: center;
-      text-align: center;
-    }
-    .icon {
-      font-size: 48px;
-      color: #888;
       margin-bottom: 10px;
     }
-    .progress-container {
+
+    #mainEditor {
+      display: grid;
+      grid-template-columns: 1fr 250px;
+      gap: 20px;
+      height: 100%;
+    }
+
+    #editor-container {
+      border-radius: 5px;
+      position: relative;
+      height: 600px;
+      overflow: hidden;
+      border: 2px dashed #ccc;
+    }
+
+    #editor-container.drag-over {
+      border-color: blue;
+    }
+
+    .progress-container, .center-message {
       display: flex;
       justify-content: center;
       align-items: center;
       width: 100%;
       height: 100%;
+    }
+
+    .warning {
+      color: red;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .icon {
+      font-size: 48px;
+      color: #888;
+      margin-bottom: 10px;
     }
   `;
   
@@ -55,6 +76,7 @@ class PipelineEditor extends LitElement {
   @state() accessor pipelines = [];
   @state() accessor selectedPipeline = '';
   @state() accessor loading = false;
+  @state() accessor selectedNodes = new Set(); // Property to store selected nodes
   
   socket = null;
   editor = null;
@@ -64,28 +86,27 @@ class PipelineEditor extends LitElement {
   async firstUpdated() {
     await this.fetchPipelines();
     await this.fetchStepsData();
+    this.addEventListener('dragover', this.handleDragOver);
+    this.addEventListener('drop', this.handleDrop);
   }
   
   async fetchPipelines() {
-    const response = await fetch('http://localhost:4003/pipelines');
-    this.pipelines = await response.json();
+    this.pipelines = await fetchPipelines();
   }
   
   async fetchPipelineData() {
     if (!this.selectedPipeline) return;
-    const response = await fetch(`http://localhost:4003/pipeline/${this.selectedPipeline}`);
-    this.pipelineData = await response.json();
+    this.pipelineData = await fetchPipelineData(this.selectedPipeline);
   }
   
   async fetchStepsData() {
-    const response = await fetch('http://localhost:4003/pipeline-steps');
-    this.stepsData = await response.json();
+    this.stepsData = await fetchStepsData();
   }
   
   async initializeEditor() {
     if (!this.pipelineData || !this.stepsData) return;
     
-    const container = this.renderRoot.querySelector('#pipelineContainer');
+    const container = this.renderRoot.querySelector('#editor-container');
     this.socket = new ClassicPreset.Socket("socket");
     
     this.editor = new NodeEditor();
@@ -95,7 +116,25 @@ class PipelineEditor extends LitElement {
     const connection = new ConnectionPlugin();
     const render = new LitPlugin();
     
-    AreaExtensions.selectableNodes(this.area, AreaExtensions.selector(), {
+    // Define an inline selector using arrow functions to maintain correct context
+    const selector = new (class extends AreaExtensions.Selector {
+      add = (entity, accumulate) => {
+        super.add(entity, accumulate);
+        this.selectedNodes.add(entity);  // Use the context of the PipelineEditor component
+        console.log('Added node:', entity);
+      };
+      remove = (entity) => {
+        super.remove(entity);
+        this.selectedNodes.delete(entity);  // Use the context of the PipelineEditor component
+        console.log('Removed node:', entity);
+      };
+    })();
+    
+    // Bind the `selectedNodes` property to the selector
+    selector.selectedNodes = this.selectedNodes;
+    
+    // Enable selectable nodes with the custom selector
+    AreaExtensions.selectableNodes(this.area, selector, {
       accumulating: AreaExtensions.accumulateOnCtrl(),
     });
     
@@ -126,22 +165,36 @@ class PipelineEditor extends LitElement {
     
     for (const step of this.pipelineData.steps) {
       const node = nodesMap.get(step.id);
-      Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
-        const [sourceNodeId, outputName] = inputValue.split('.');
-        const sourceNode = nodesMap.get(sourceNodeId);
-        if (sourceNode) {
-          this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
-        }
-      });
+      
+      // Ensure node exists before creating connections
+      if (node) {
+        Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
+          const [sourceNodeId, outputName] = inputValue.split('.');
+          const sourceNode = nodesMap.get(sourceNodeId);
+          
+          // Validate source node and sockets before creating connections
+          if (sourceNode) {
+            const output = sourceNode.outputs[outputName];  // Use bracket notation to access output
+            const input = node.inputs[inputName];  // Use bracket notation to access input
+            
+            if (output && input) {
+              // Only add the connection if both input and output sockets exist
+              this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
+            } else {
+              console.warn(`Cannot find matching socket for input: ${inputName} or output: ${outputName}`);
+            }
+          }
+        });
+      }
     }
     
-    this.loading = true; // Show progress indicator
+    this.loading = true;
     
     setTimeout(() => {
       this.autoArrange();
       setTimeout(() => {
         this.autoZoom();
-        this.loading = false; // Hide progress indicator
+        this.loading = false;
       }, 1000);
     }, 300);
   }
@@ -160,11 +213,15 @@ class PipelineEditor extends LitElement {
     
     const node = new ClassicPreset.Node(nodeNameWithEllipsis);
     
+    // Add inputs to the node
     for (const inputName of stepDetails.inputs || []) {
+      // Ensure the socket exists for each input
       node.addInput(inputName, new ClassicPreset.Input(socket, inputName));
     }
     
+    // Add outputs to the node
     for (const outputName of stepDetails.outputs || []) {
+      // Ensure the socket exists for each output
       node.addOutput(outputName, new ClassicPreset.Output(socket, outputName));
     }
     
@@ -186,13 +243,14 @@ class PipelineEditor extends LitElement {
     const findRootNodes = () => {
       const connections = this.editor.getConnections();
       return nodes.filter(node => {
+        if (!node) return false; // Ensure the node is defined
         const inputs = connections.filter(conn => conn.target === node.id);
         return inputs.length === 0;
       });
     };
     
     const arrangeNode = (node, depth = 0) => {
-      if (processedNodes.has(node.id)) return;
+      if (!node || processedNodes.has(node.id)) return; // Check if node is defined and not already processed
       processedNodes.add(node.id);
       
       if (!levels.has(depth)) {
@@ -202,8 +260,8 @@ class PipelineEditor extends LitElement {
       
       const outputs = this.editor.getConnections().filter(conn => conn.source === node.id);
       for (const output of outputs) {
-        const childNode = nodes.find(n => n.id === output.target);
-        arrangeNode(childNode, depth + 1);
+        const childNode = nodes.find(n => n && n.id === output.target); // Ensure childNode is defined
+        if (childNode) arrangeNode(childNode, depth + 1);
       }
     };
     
@@ -224,7 +282,9 @@ class PipelineEditor extends LitElement {
     
     for (const node of nodes) {
       const position = positions.get(node.id);
-      await this.area.translate(node.id, position);
+      if (position) {
+        await this.area.translate(node.id, position);
+      }
     }
   }
   
@@ -239,32 +299,88 @@ class PipelineEditor extends LitElement {
     await this.createPipeline();
   }
   
+  handleDragOver(event) {
+    event.preventDefault();
+    this.renderRoot.querySelector('#editor-container').classList.add('drag-over');
+  }
+  
+  handleDrop(event) {
+    event.preventDefault();
+    this.renderRoot.querySelector('#editor-container').classList.remove('drag-over');
+    
+    const stepId = event.dataTransfer.getData('step-id');
+    const stepDetails = this.stepsData.find((step) => step.id === stepId);
+    
+    if (stepDetails) {
+      const node = this.createNode({ id: stepId }, stepDetails, this.socket);
+      this.editor.addNode(node);
+    }
+  }
+  
+  async deleteSelectedNodes() {
+    if (!this.selectedNodes || this.selectedNodes.size === 0) {
+      alert('No nodes selected for deletion.');
+      return;
+    }
+    
+    // Delete all connections related to each selected node
+    Array.from(this.selectedNodes).forEach((node) => {
+      console.log('Deleting node:', node);
+      const connectionsToRemove = this.editor.getConnections().filter(conn =>
+        conn.source === node.id || conn.target === node.id
+      );
+      
+      // Remove all related connections
+      connectionsToRemove.forEach(conn => {
+        console.log('Removing connection:', conn);
+        this.editor.removeConnection(conn.id);
+      });
+      
+      // Now remove the node
+      this.editor.removeNode(node.id);
+    });
+    
+    this.selectedNodes.clear(); // Clear selection after deletion
+  }
+  
   render() {
     return html`
-      <div id="controls">
-        <sp-button variant="secondary" @click=${this.autoZoom}>Auto Zoom</sp-button>
-        <sp-button variant="secondary" @click=${this.autoArrange}>Auto Arrange</sp-button>
-        <sp-picker label="Select Pipeline" @change=${this.handlePipelineChange}>
-          ${this.pipelines.map(pipeline => html`
-            <sp-menu-item value="${pipeline.id}" ?selected=${pipeline.id === this.selectedPipeline}>
-              ${pipeline.name}
-            </sp-menu-item>
-          `)}
-        </sp-picker>
-      </div>
-      <div id="pipelineContainer">
-        ${this.loading ? html`
-        <div class="progress-container">
-          <sp-progress-circle size="large" indeterminate></sp-progress-circle>
+      <div id="editorWrapper">
+        <div id="controls">
+          <sp-button variant="secondary" @click=${this.autoZoom}>Auto Zoom</sp-button>
+          <sp-button variant="secondary" @click=${this.autoArrange}>Auto Arrange</sp-button>
+          <sp-button variant="secondary" @click=${this.deleteSelectedNodes}>Delete Selected</sp-button>
+          <sp-picker label="Select Pipeline" @change=${this.handlePipelineChange}>
+            ${this.pipelines.map(
+              (pipeline) => html`
+                <sp-menu-item value="${pipeline.id}" ?selected=${pipeline.id === this.selectedPipeline}>
+                  ${pipeline.name}
+                </sp-menu-item>
+              `
+            )}
+          </sp-picker>
         </div>
-      ` : html`
-        ${!this.selectedPipeline ? html`
-          <div class="center-message">
-            <div class="icon">⚠️</div>
-            <div>Please select a pipeline to load.</div>
+        <div id="mainEditor">
+          <div id="editor-container">
+            ${this.loading
+              ? html`
+                <div class="progress-container">
+                  <sp-progress-circle size="large" indeterminate></sp-progress-circle>
+                </div>
+              `
+              : html`
+                ${!this.selectedPipeline
+                  ? html`
+                    <div class="center-message">
+                      <div class="icon">⚠️</div>
+                      <div>Please select a pipeline to load.</div>
+                    </div>
+                  `
+                : ''}
+              `}
           </div>
-        ` : ''}
-      `}
+          <side-rail id="sideRail"></side-rail>
+        </div>
       </div>
     `;
   }

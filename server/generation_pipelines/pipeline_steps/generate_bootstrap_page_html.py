@@ -11,10 +11,8 @@ class GeneratedHtml:
 
 
 class GenerateBootstrapPageHtmlStep(PipelineStep):
-    def __init__(self, job_folder: str, runs: int = 1, **kwargs: Any):
+    def __init__(self, job_folder: str, **kwargs: Any):
         super().__init__(**kwargs)
-        self.runs = runs
-        print(f"Number of runs: {runs}")
         self.job_folder = job_folder
 
     @staticmethod

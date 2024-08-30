@@ -39,7 +39,7 @@ class StandardGenerationStep(PipelineStep):
     def get_description():
         return 'A standard generation recipe that generates a webpage based using a data model.'
 
-    async def process(self, uploaded_files: List[str],  user_intent: str, website_url: str, **kwargs: Any) -> CreatedPage:
+    async def process(self, uploaded_files: StepResultDict[str],  user_intent: StepResultDict[str], website_url: str, **kwargs: Any) -> CreatedPage:
         self.push_update('Processing uploaded documents...')
         loop = asyncio.get_running_loop()
 
