@@ -1,5 +1,10 @@
+from dataclasses import dataclass
+
 from server.pipeline_step import PipelineStep
 
+@dataclass
+class ProcessResult:
+    result: int
 
 class AdditionStep(PipelineStep):
     def __init__(self, **config):
@@ -17,5 +22,6 @@ class AdditionStep(PipelineStep):
     def get_description() -> str:
         return "Performs addition of two numbers."
 
-    async def process(self, a: int, b: int) -> dict:
-        return { "result": a + b }
+    # make the return type of process a dictionary with specific keys
+    async def process(self, a: int, b: int) -> ProcessResult:
+        return ProcessResult(result=a + b)

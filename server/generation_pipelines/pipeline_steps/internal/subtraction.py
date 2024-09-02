@@ -1,5 +1,10 @@
+from dataclasses import dataclass
+
 from server.pipeline_step import PipelineStep
 
+@dataclass
+class ProcessResult:
+    result: int
 
 class SubtractionStep(PipelineStep):
     @staticmethod
@@ -14,5 +19,5 @@ class SubtractionStep(PipelineStep):
     def get_description() -> str:
         return "Performs subtraction of two numbers."
 
-    async def process(self, a: int, b: int) -> dict:
-        return { "result": a - b }
+    async def process(self, a: int, b: int) -> ProcessResult:
+        return ProcessResult(result=a - b)

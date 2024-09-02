@@ -2,12 +2,34 @@
 import { css } from 'lit';
 
 export const pipelineEditorStyles = css`
-  #editorWrapper {
+  #mainEditor {
     display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 10px;
-    width: 100%;
+    grid-template-columns: 1fr 250px;
+    gap: 20px;
     height: 100%;
+    transition: grid-template-columns 0.3s ease; /* Smooth transition */
+  }
+
+  #mainEditor.expanded {
+    grid-template-columns: 1fr 0; /* Expand the main editor to full width when side rail is collapsed */
+  }
+
+  #sideRail {
+    width: 250px; /* Default width */
+    transition: width 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    opacity: 1; /* Fully visible */
+  }
+
+  #sideRail.collapsed {
+    width: 0; /* Collapsed width */
+    opacity: 0; /* Make content invisible when collapsed */
+  }
+
+  #collapseButton {
   }
 
   #controls {
@@ -15,13 +37,6 @@ export const pipelineEditorStyles = css`
     gap: 10px;
     align-items: center;
     margin-bottom: 10px;
-  }
-
-  #mainEditor {
-    display: grid;
-    grid-template-columns: 1fr 250px;
-    gap: 20px;
-    height: 100%;
   }
 
   #editor-container {

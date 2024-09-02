@@ -33,7 +33,7 @@ class CreatePageFromHtmlStep(PipelineStep):
     def get_description() -> str:
         return "This step creates an HTML page from the provided content and saves images."
 
-    def process(self, html: str, images: Dict[str, str], **kwargs: Any):
+    def process(self, html: str, images: Dict[str, str], **kwargs: Any) -> CreatedPage:
         try:
             # Update status
             self.push_update("Starting to create the page from HTML and saving images...")
@@ -65,6 +65,7 @@ class CreatePageFromHtmlStep(PipelineStep):
 
             # Return the URLs of the saved images
             page_url = PREVIEW_URL_TEMPLATE.format(jobId=self.job_id)
+
             return CreatedPage(urls={"url0": page_url})
 
         except Exception as e:

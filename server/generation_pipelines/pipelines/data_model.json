@@ -1,14 +1,14 @@
 {
-  "id": "bootstrap_pipeline",
-  "name": "Bootstrap Pipeline",
-  "description": "This pipeline is used to generate a page using the Bootstrap framework.",
+  "id": "data_model_pipeline",
+  "name": "Data Model Pipeline",
+  "description": "This pipeline is used to generate a page using a data model.",
   "inputs": {
     "uploaded_files": null,
     "user_intent": null,
     "website_url": null
   },
   "outputs": {
-    "urls": "create_page_from_html.urls"
+    "urls": "standard_generation_step.urls"
   },
   "steps": [
     {
@@ -40,23 +40,14 @@
       }
     },
     {
-      "id": "generate_bootstrap_page_html",
-      "type": "generate_bootstrap_page_html",
-      "label": "Generate Bootstrap Page HTML",
+      "id": "standard_generation_step",
+      "type": "standard_generation_step",
       "inputs": {
+        "user_intent": "inputs.user_intent",
         "text_content": "process_uploaded_files.text_content",
         "images": "process_uploaded_files.images",
         "captions": "generate_image_captions.captions",
         "screenshot": "fetch_screenshot.screenshot"
-      }
-    },
-    {
-      "id": "create_page_from_html",
-      "type": "create_page_from_html",
-      "label": "Create Page from HTML",
-      "inputs": {
-        "html": "generate_bootstrap_page_html.html",
-        "images": "process_uploaded_files.images"
       }
     }
   ]

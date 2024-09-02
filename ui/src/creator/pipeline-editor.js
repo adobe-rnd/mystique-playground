@@ -25,6 +25,7 @@ class PipelineEditor extends LitElement {
   @state() accessor selectedPipeline = '';
   @state() accessor loading = false;
   @state() accessor selectedNodes = new Set(); // Property to store selected nodes
+  @state() accessor sideRailCollapsed = true;
   
   socket = null;
   editor = null;
@@ -89,11 +90,30 @@ class PipelineEditor extends LitElement {
       boundViewport: true
     });
     
+    // Customize node rendering with different colors based on the type property
     render.addPreset(Presets.classic.setup({
       customize: {
         node(context) {
-          console.log('Rendering node:', context.payload);
-          return ({ emit }) => html`<rete-node .data=${context.payload} .emit=${emit}></rete-node>`;
+          let nodeColor = '#ffffff'; // Default white color
+          
+          // Use the type property to determine node color
+          const nodeType = context.payload.type || 'processing'; // Default to 'processing' if type is not defined
+          
+          // Set colors based on node type
+          if (nodeType === 'input') {
+            nodeColor = '#4caf50'; // Green for input nodes
+          } else if (nodeType === 'output') {
+            nodeColor = '#f44336'; // Red for output nodes
+          } else if (nodeType === 'processing') {
+            nodeColor = '#2196f3'; // Blue for processing nodes
+          }
+          
+          // Return the custom node template
+          return ({ emit }) => html`
+                    <rete-node style="background-color: ${nodeColor}" .data=${context.payload} .emit=${emit}>
+                        <!-- Customize node appearance if needed -->
+                    </rete-node>
+                `;
         }
       }
     }));
@@ -104,7 +124,7 @@ class PipelineEditor extends LitElement {
     this.editor.use(this.area);
     this.area.use(connection);
     this.area.use(render);
-    this.area.use(minimap);
+    // this.area.use(minimap);
     
     AreaExtensions.simpleNodesOrder(this.area);
   }
@@ -113,8 +133,23 @@ class PipelineEditor extends LitElement {
     if (!this.editor) await this.initializeEditor();
     const nodesMap = new Map();
     
+    // Step 1: Add input nodes
+    for (const [inputName, inputValue] of Object.entries(this.pipelineData.inputs)) {
+      const inputNode = this.createInputNode(inputName, inputValue, this.socket);
+      nodesMap.set(`inputs.${inputName}`, inputNode);
+      await this.editor.addNode(inputNode);
+    }
+    
+    // Step 2: Add output nodes
+    for (const [outputName, outputValue] of Object.entries(this.pipelineData.outputs)) {
+      const outputNode = this.createOutputNode(outputName, outputValue, this.socket);
+      nodesMap.set(`outputs.${outputName}`, outputNode);
+      await this.editor.addNode(outputNode);
+    }
+    
+    // Step 3: Add pipeline step nodes
     for (const step of this.pipelineData.steps) {
-      const stepDetails = this.stepsData.find(s => s.id === step.id);
+      const stepDetails = this.stepsData.find(s => s.id === step.type);
       if (stepDetails) {
         const node = this.createNode(step, stepDetails, this.socket);
         nodesMap.set(step.id, node);
@@ -122,22 +157,30 @@ class PipelineEditor extends LitElement {
       }
     }
     
+    // Step 4: Create connections from input nodes to processing step nodes
     for (const step of this.pipelineData.steps) {
       const node = nodesMap.get(step.id);
       
-      // Ensure node exists before creating connections
       if (node) {
         Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
-          const [sourceNodeId, outputName] = inputValue.split('.');
+          let sourceNodeId, outputName;
+          
+          // Check if the input comes from the global inputs
+          if (inputValue.startsWith("inputs.")) {
+            sourceNodeId = inputValue; // Directly use inputValue as it already contains the global input node identifier
+            outputName = inputName; // The output from the global input node will have the same name as the input
+          } else {
+            // If not a global input, split as usual
+            [sourceNodeId, outputName] = inputValue.split('.');
+          }
+          
           const sourceNode = nodesMap.get(sourceNodeId);
           
-          // Validate source node and sockets before creating connections
           if (sourceNode) {
-            const output = sourceNode.outputs[outputName];  // Use bracket notation to access output
-            const input = node.inputs[inputName];  // Use bracket notation to access input
+            const output = sourceNode.outputs[outputName];
+            const input = node.inputs[inputName];
             
             if (output && input) {
-              // Only add the connection if both input and output sockets exist
               this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
             } else {
               console.warn(`Cannot find matching socket for input: ${inputName} or output: ${outputName}`);
@@ -147,8 +190,23 @@ class PipelineEditor extends LitElement {
       }
     }
     
-    this.loading = true;
+    // Step 5: Create connections for output nodes
+    for (const [outputName, outputValue] of Object.entries(this.pipelineData.outputs)) {
+      const [sourceNodeId, outputPort] = outputValue.split('.');
+      console.log('Output:', outputName, sourceNodeId, outputPort);
+      const sourceNode = nodesMap.get(sourceNodeId);
+      const outputNode = nodesMap.get(`outputs.${outputName}`);
+      
+      console.log('Source Node:', sourceNode);
+      console.log('Output Node:', outputNode);
+      
+      if (sourceNode && outputNode) {
+        this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputPort, outputNode, outputName));
+      }
+    }
     
+    // Step 6: Auto arrange and zoom
+    this.loading = true;
     setTimeout(() => {
       this.autoArrange();
       setTimeout(() => {
@@ -158,9 +216,19 @@ class PipelineEditor extends LitElement {
     }, 300);
   }
   
-  async deletePipeline() {
-    if (!this.editor) return;
-    await this.editor.clear();
+  createInputNode(inputName, inputValue, socket) {
+    const node = new ClassicPreset.Node(inputName);
+    node.customData = { value: inputValue }; // Store the input value for use
+    node.addOutput(inputName, new ClassicPreset.Output(socket, inputName));
+    node.type = 'input'; // Add type property
+    return node;
+  }
+  
+  createOutputNode(outputName, outputValue, socket) {
+    const node = new ClassicPreset.Node(outputName);
+    node.addInput(outputName, new ClassicPreset.Input(socket, outputName));
+    node.type = 'output'; // Add type property
+    return node;
   }
   
   createNode(step, stepDetails, socket) {
@@ -171,21 +239,24 @@ class PipelineEditor extends LitElement {
       : stepDetails.name;
     
     const node = new ClassicPreset.Node(nodeNameWithEllipsis);
-    node.customData = {};
     
     // Add inputs to the node
     for (const inputName of stepDetails.inputs || []) {
-      // Ensure the socket exists for each input
       node.addInput(inputName, new ClassicPreset.Input(socket, inputName));
     }
     
     // Add outputs to the node
     for (const outputName of stepDetails.outputs || []) {
-      // Ensure the socket exists for each output
       node.addOutput(outputName, new ClassicPreset.Output(socket, outputName));
     }
     
+    node.type = 'processing'; // Add type property
     return node;
+  }
+  
+  async deletePipeline() {
+    if (!this.editor) return;
+    await this.editor.clear();
   }
   
   autoZoom() {
@@ -194,7 +265,7 @@ class PipelineEditor extends LitElement {
   
   async autoArrange() {
     const nodes = this.editor.getNodes();
-    const grid = 250;
+    const grid = 300;
     const margin = 50;
     const positions = new Map();
     const processedNodes = new Set();
@@ -233,7 +304,7 @@ class PipelineEditor extends LitElement {
       let currentY = -totalHeight / 2;
       
       for (const node of nodesAtDepth) {
-        const x = depth * grid;
+        const x = depth * grid + (node.type === 'input' ? -grid/2 : node.type === 'output' ? grid/2 : 0);
         const y = currentY;
         positions.set(node.id, { x, y });
         currentY += grid + margin;
@@ -275,6 +346,10 @@ class PipelineEditor extends LitElement {
       const node = this.createNode({ id: stepId }, stepDetails, this.socket);
       this.editor.addNode(node);
     }
+  }
+  
+  toggleSideRail() {
+    this.sideRailCollapsed = !this.sideRailCollapsed;
   }
   
   async deleteSelectedNodes() {
@@ -319,8 +394,14 @@ class PipelineEditor extends LitElement {
               `
             )}
           </sp-picker>
+          <sp-button
+                  id="collapseButton"
+                  variant="secondary"
+                  @click=${this.toggleSideRail}>
+            ${this.sideRailCollapsed ? 'Expand Side Panel' : 'Collapse Side Panel'}
+          </sp-button>
         </div>
-        <div id="mainEditor">
+        <div id="mainEditor" class=${this.sideRailCollapsed ? 'expanded' : ''}>
           <div id="editor-container">
             ${this.loading
               ? html`
@@ -339,7 +420,9 @@ class PipelineEditor extends LitElement {
                 : ''}
               `}
           </div>
-          <side-rail id="sideRail"></side-rail>
+          <div id="sideRail" class=${this.sideRailCollapsed ? 'collapsed' : ''}>
+            <side-rail></side-rail>
+          </div>
         </div>
       </div>
     `;

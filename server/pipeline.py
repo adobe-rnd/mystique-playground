@@ -85,11 +85,7 @@ class Pipeline(Job):
     def _resolve_references_in_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
         resolved_config = {}
         for key, value in config.items():
-            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
-                property_name = value[2:-1]
-                resolved_config[key] = self.properties.get(property_name, value)
-            else:
-                resolved_config[key] = value
+            resolved_config[key] = value
         return resolved_config
 
     def register_step(self, step: PipelineStep, step_id: str):
@@ -165,10 +161,19 @@ class Pipeline(Job):
                 print(f"Completed steps: {completed_steps}")
 
                 # Determine which steps are ready to run next
-                steps_to_run = [
-                    step_id for step_id, deps in self.step_dependencies.items()
-                    if step_id not in completed_steps and all(dep in completed_steps for dep in deps)
-                ]
+                steps_to_run = []
+                for step_id, deps in self.step_dependencies.items():
+                    if step_id not in completed_steps:
+                        # Check if all dependencies for this step have been completed
+                        all_deps_completed = all(
+                            dep in completed_steps or dep == 'inputs' for dep in deps
+                        )
+                        if all_deps_completed:
+                            print(f"Step '{step_id}' is ready to run: all dependencies {deps} are completed or are global inputs.")
+                            steps_to_run.append(step_id)
+                        else:
+                            print(f"Step '{step_id}' is not ready to run: dependencies {deps} are not yet completed.")
+                print(f"Next steps to run: {steps_to_run}")
 
         return self.get_output()
 

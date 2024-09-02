@@ -23,17 +23,18 @@ GENERATED_FOLDER = 'generated'
 
 def load_pipelines_from_folder(folder_path):
     pipelines = {}
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".json"):
-            with open(os.path.join(folder_path, filename)) as f:
-                config = json.load(f)
-                pipeline_id = config["id"]
-                print(f"Loading pipeline: {pipeline_id}")
-                pipelines[pipeline_id] = {
-                    "name": config["name"],
-                    "description": config["description"],
-                    "config": config
-                }
+    for root, _, files in os.walk(folder_path):  # Use os.walk to traverse all subdirectories
+        for filename in files:
+            if filename.endswith(".json"):
+                with open(os.path.join(root, filename)) as f:
+                    config = json.load(f)
+                    pipeline_id = config["id"]
+                    print(f"Loading pipeline: {pipeline_id} from {os.path.join(root, filename)}")
+                    pipelines[pipeline_id] = {
+                        "name": config["name"],
+                        "description": config["description"],
+                        "config": config
+                    }
     return pipelines
 
 
@@ -181,16 +182,23 @@ class WebCreator:
         return Response(generate(), mimetype='text/event-stream')
 
     def get_pipeline_steps(self):
-        return jsonify([step for step in self.pipeline_metadata_extractor.extract_pipeline_steps()])
+        try:
+            steps = self.pipeline_metadata_extractor.extract_pipeline_steps()
+            print(f"Detected pipeline steps: {steps}")
+            return jsonify(steps)
+        except Exception as e:
+            print(f"Error extracting pipeline steps: {e}")
+            return jsonify({"error": str(e)}), 500
 
     @staticmethod
     def get_pipelines():
         pipelines = []
-        for filename in os.listdir(PIPELINE_FOLDER_PATH):
-            if filename.endswith(".json"):
-                with open(os.path.join(PIPELINE_FOLDER_PATH, filename)) as f:
-                    pipeline = json.load(f)
-                    pipelines.append(pipeline)
+        for root, _, files in os.walk(PIPELINE_FOLDER_PATH):  # Use os.walk to traverse subdirectories
+            for filename in files:
+                if filename.endswith(".json"):
+                    with open(os.path.join(root, filename)) as f:
+                        pipeline = json.load(f)
+                        pipelines.append(pipeline)
         return jsonify(pipelines)
 
     @staticmethod
