@@ -13,7 +13,7 @@ class SubtractionStep(PipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Subtraction Step"
+        return "Subtraction"
 
     @staticmethod
     def get_description() -> str:

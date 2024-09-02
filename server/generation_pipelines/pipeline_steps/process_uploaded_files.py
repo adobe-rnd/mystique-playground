@@ -92,11 +92,11 @@ class TextContentAndImages:
 class ProcessUploadedFilesStep(PipelineStep):
     @staticmethod
     def get_unique_id() -> str:
-        return "process_uploaded_files"
+        return "process_files"
 
     @staticmethod
     def get_name() -> str:
-        return "Process Uploads"
+        return "Process Files"
 
     @staticmethod
     def get_description() -> str:

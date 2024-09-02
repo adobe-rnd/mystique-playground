@@ -16,7 +16,7 @@ class AdditionStep(PipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Addition Step"
+        return "Addition"
 
     @staticmethod
     def get_description() -> str:

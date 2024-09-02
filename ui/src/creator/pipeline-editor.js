@@ -77,7 +77,6 @@ class PipelineEditor extends LitElement {
       };
     })();
     
-    
     // Bind the `selectedNodes` property to the selector
     selector.selectedNodes = this.selectedNodes;
     
@@ -110,10 +109,14 @@ class PipelineEditor extends LitElement {
           
           // Return the custom node template
           return ({ emit }) => html`
-                    <rete-node style="background-color: ${nodeColor}" .data=${context.payload} .emit=${emit}>
-                        <!-- Customize node appearance if needed -->
-                    </rete-node>
-                `;
+            <rete-node
+              data-node-id="${context.payload.id}"
+              style="background-color: ${nodeColor}"
+              .data=${context.payload}
+              .emit=${emit}>
+                <!-- Customize node appearance if needed -->
+            </rete-node>
+          `;
         }
       }
     }));
@@ -124,7 +127,6 @@ class PipelineEditor extends LitElement {
     this.editor.use(this.area);
     this.area.use(connection);
     this.area.use(render);
-    // this.area.use(minimap);
     
     AreaExtensions.simpleNodesOrder(this.area);
   }
@@ -263,54 +265,124 @@ class PipelineEditor extends LitElement {
     AreaExtensions.zoomAt(this.area, this.editor.getNodes());
   }
   
-  async autoArrange() {
-    const nodes = this.editor.getNodes();
-    const grid = 300;
-    const margin = 50;
-    const positions = new Map();
-    const processedNodes = new Set();
-    const levels = new Map();
+  calculateNodeLevelsBFS(processingNodes, inputNodes) {
+    const levels = new Map(); // Store the maximum depth level of each node
+    const queue = []; // Queue to process nodes in BFS order
     
-    const findRootNodes = () => {
+    const nodes = this.editor.getNodes();
+    
+    // Start with root processing nodes (nodes with no incoming connections from other processing nodes)
+    const findRootProcessingNodes = () => {
       const connections = this.editor.getConnections();
-      return nodes.filter(node => {
-        if (!node) return false; // Ensure the node is defined
+      return processingNodes.filter(node => {
+        // Get incoming connections to this node
         const inputs = connections.filter(conn => conn.target === node.id);
-        return inputs.length === 0;
+        // Check if all incoming connections come from input nodes
+        return inputs.every(conn => inputNodes.some(inputNode => inputNode.id === conn.source));
       });
     };
     
-    const arrangeNode = (node, depth = 0) => {
-      if (!node || processedNodes.has(node.id)) return; // Check if node is defined and not already processed
-      processedNodes.add(node.id);
+    const rootProcessingNodes = findRootProcessingNodes();
+    
+    // Initialize queue with root processing nodes and set their initial levels to 0
+    rootProcessingNodes.forEach(rootNode => {
+      levels.set(rootNode.id, 0); // Root nodes have level 0
+      queue.push(rootNode);
+    });
+    
+    // Perform BFS to calculate levels for all processing nodes
+    while (queue.length > 0) {
+      const currentNode = queue.shift(); // Dequeue the next node
+      const currentLevel = levels.get(currentNode.id);
       
-      if (!levels.has(depth)) {
-        levels.set(depth, []);
-      }
-      levels.get(depth).push(node);
+      // Get all children of the current node
+      const outputs = this.editor.getConnections().filter(conn => conn.source === currentNode.id);
       
-      const outputs = this.editor.getConnections().filter(conn => conn.source === node.id);
-      for (const output of outputs) {
-        const childNode = nodes.find(n => n && n.id === output.target); // Ensure childNode is defined
-        if (childNode) arrangeNode(childNode, depth + 1);
+      outputs.forEach(output => {
+        const childNode = nodes.find(n => n && n.id === output.target);
+        if (childNode) {
+          const existingLevel = levels.get(childNode.id);
+          
+          // If the child node already has a level, take the maximum of the existing and new levels
+          const newLevel = currentLevel + 1;
+          if (existingLevel === undefined || newLevel > existingLevel) {
+            levels.set(childNode.id, newLevel); // Update level for the child node
+            queue.push(childNode); // Enqueue child node for further processing
+          }
+        }
+      });
+    }
+    
+    return levels;
+  }
+  
+  async autoArrange() {
+    const nodes = this.editor.getNodes();
+    const gridX = 400; // Horizontal space between nodes
+    const inputOutputMargin = 50; // Margin between input/output nodes and processing nodes
+    const processingMargin = 100; // Margin between processing nodes
+    const positions = new Map();
+    
+    // Separate nodes into input, output, and processing types
+    const inputNodes = nodes.filter(node => node.type === 'input');
+    const outputNodes = nodes.filter(node => node.type === 'output');
+    const processingNodes = nodes.filter(node => node.type === 'processing');
+    
+    // Function to get the real height of a node by querying the DOM
+    const getNodeHeight = (node) => {
+      console.log('Node:', node);
+      const element = this.renderRoot.querySelector(`[data-node-id="${node.id}"]`); // Use the data attribute to find the element
+      console.log('Element:', element);
+      return element ? element.offsetHeight : 150; // Default height if element is not found
+    };
+    
+    // Function to arrange nodes vertically in a column with real heights
+    const arrangeVerticallyWithHeights = (nodesToArrange, xPosition) => {
+      const totalHeight = nodesToArrange.reduce((sum, node) => sum + getNodeHeight(node), 0)
+        + (nodesToArrange.length - 1) * inputOutputMargin;
+      let currentY = -totalHeight / 2;
+      for (const node of nodesToArrange) {
+        const nodeHeight = getNodeHeight(node);
+        positions.set(node.id, { x: xPosition, y: currentY });
+        currentY += nodeHeight + inputOutputMargin; // Add some margin between nodes
       }
     };
     
-    const rootNodes = findRootNodes();
-    rootNodes.forEach(rootNode => arrangeNode(rootNode));
+    // Align input nodes vertically on the left
+    arrangeVerticallyWithHeights(inputNodes, -gridX);
     
-    for (let [depth, nodesAtDepth] of levels.entries()) {
-      const totalHeight = (nodesAtDepth.length - 1) * (grid + margin);
+    // Use the new BFS function to calculate node levels
+    const levels = this.calculateNodeLevelsBFS(processingNodes, inputNodes);
+    
+    // Arrange processing nodes based on their calculated levels
+    const nodesByDepth = Array.from(levels.entries()).reduce((acc, [id, depth]) => {
+      if (!acc[depth]) acc[depth] = [];
+      acc[depth].push(nodes.find(n => n && n.id === id));
+      return acc;
+    }, {});
+    
+    // Determine the maximum depth of all processing nodes
+    const maxDepth = Math.max(...Array.from(levels.values()));
+    
+    // Position processing nodes based on their levels
+    for (let [depth, nodesAtDepth] of Object.entries(nodesByDepth)) {
+      const xPosition = depth * gridX; // Position nodes horizontally by their depth
+      const totalHeight = nodesAtDepth.reduce((sum, node) => sum + getNodeHeight(node), 0)
+        + processingMargin * (nodesAtDepth.length - 1); // Add margin between nodes
       let currentY = -totalHeight / 2;
       
       for (const node of nodesAtDepth) {
-        const x = depth * grid + (node.type === 'input' ? -grid/2 : node.type === 'output' ? grid/2 : 0);
-        const y = currentY;
-        positions.set(node.id, { x, y });
-        currentY += grid + margin;
+        const nodeHeight = getNodeHeight(node);
+        positions.set(node.id, { x: xPosition, y: currentY });
+        currentY += nodeHeight + processingMargin; // Add some margin between nodes
       }
     }
     
+    // Dynamically position output nodes just beyond the maximum depth of processing nodes
+    const outputXPosition = (maxDepth) * gridX; // One step beyond the maximum processing depth
+    arrangeVerticallyWithHeights(outputNodes, outputXPosition);
+    
+    // Apply calculated positions to nodes
     for (const node of nodes) {
       const position = positions.get(node.id);
       if (position) {
@@ -387,12 +459,12 @@ class PipelineEditor extends LitElement {
           <sp-button variant="secondary" @click=${this.deleteSelectedNodes}>Delete Selected</sp-button>
           <sp-picker label="Select Pipeline" @change=${this.handlePipelineChange}>
             ${this.pipelines.map(
-              (pipeline) => html`
+      (pipeline) => html`
                 <sp-menu-item value="${pipeline.id}" ?selected=${pipeline.id === this.selectedPipeline}>
                   ${pipeline.name}
                 </sp-menu-item>
               `
-            )}
+    )}
           </sp-picker>
           <sp-button
                   id="collapseButton"
@@ -404,20 +476,20 @@ class PipelineEditor extends LitElement {
         <div id="mainEditor" class=${this.sideRailCollapsed ? 'expanded' : ''}>
           <div id="editor-container">
             ${this.loading
-              ? html`
+      ? html`
                 <div class="progress-container">
                   <sp-progress-circle size="large" indeterminate></sp-progress-circle>
                 </div>
               `
-              : html`
+      : html`
                 ${!this.selectedPipeline
-                  ? html`
+        ? html`
                     <div class="center-message">
                       <div class="icon">⚠️</div>
                       <div>Please select a pipeline to load.</div>
                     </div>
                   `
-                : ''}
+        : ''}
               `}
           </div>
           <div id="sideRail" class=${this.sideRailCollapsed ? 'collapsed' : ''}>

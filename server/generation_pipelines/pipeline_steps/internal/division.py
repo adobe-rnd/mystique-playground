@@ -16,7 +16,7 @@ class DivisionStep(PipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Division Step"
+        return "Division"
 
     @staticmethod
     def get_description() -> str:

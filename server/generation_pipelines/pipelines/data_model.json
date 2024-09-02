@@ -8,13 +8,13 @@
     "website_url": null
   },
   "outputs": {
-    "urls": "standard_generation_step.urls"
+    "url": "create_page_from_data_model.url"
   },
   "steps": [
     {
-      "id": "process_uploaded_files",
-      "type": "process_uploaded_files",
-      "label": "Process Uploaded Files",
+      "id": "process_files",
+      "type": "process_files",
+      "label": "Process Files",
       "inputs": {
         "uploaded_files": "inputs.uploaded_files"
       }
@@ -34,20 +34,44 @@
     {
       "id": "generate_image_captions",
       "type": "generate_image_captions",
-      "label": "Generate Image Captions",
       "inputs": {
-        "images": "process_uploaded_files.images"
+        "images": "process_files.images"
       }
     },
     {
-      "id": "standard_generation_step",
-      "type": "standard_generation_step",
+      "id": "generate_page_content",
+      "type": "generate_page_content",
       "inputs": {
-        "user_intent": "inputs.user_intent",
-        "text_content": "process_uploaded_files.text_content",
-        "images": "process_uploaded_files.images",
-        "captions": "generate_image_captions.captions",
+        "text_content": "process_files.text_content",
+        "user_intent": "inputs.user_intent"
+      }
+    },
+    {
+      "id": "generate_css_variables",
+      "type": "generate_css_variables",
+      "inputs": {
         "screenshot": "fetch_screenshot.screenshot"
+      }
+    },
+    {
+      "id": "generate_page_data_model",
+      "type": "generate_page_data_model",
+      "label": "Generate Page Data Model",
+      "inputs": {
+        "screenshot": "fetch_screenshot.screenshot",
+        "page_content": "generate_page_content.page_content",
+        "images": "process_files.images",
+        "captions": "generate_image_captions.captions"
+      }
+    },
+    {
+      "id": "create_page_from_data_model",
+      "type": "create_page_from_data_model",
+      "label": "Create Page from Data Model",
+      "inputs": {
+        "data_model": "generate_page_data_model.data_model",
+        "css_vars": "generate_css_variables.css_vars",
+        "images": "process_files.images"
       }
     }
   ]

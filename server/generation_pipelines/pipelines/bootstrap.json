@@ -4,16 +4,15 @@
   "description": "This pipeline is used to generate a page using the Bootstrap framework.",
   "inputs": {
     "uploaded_files": null,
-    "user_intent": null,
     "website_url": null
   },
   "outputs": {
-    "urls": "create_page_from_html.urls"
+    "url": "create_page_from_html.url"
   },
   "steps": [
     {
-      "id": "process_uploaded_files",
-      "type": "process_uploaded_files",
+      "id": "process_files",
+      "type": "process_files",
       "label": "Process Uploaded Files",
       "inputs": {
         "uploaded_files": "inputs.uploaded_files"
@@ -29,6 +28,12 @@
       "config": {
         "max_width": 1200,
         "max_height": 1200
+      },
+      "_editor": {
+        "position": {
+          "x": 200,
+          "y": 200
+        }
       }
     },
     {
@@ -36,7 +41,7 @@
       "type": "generate_image_captions",
       "label": "Generate Image Captions",
       "inputs": {
-        "images": "process_uploaded_files.images"
+        "images": "process_files.images"
       }
     },
     {
@@ -44,8 +49,8 @@
       "type": "generate_bootstrap_page_html",
       "label": "Generate Bootstrap Page HTML",
       "inputs": {
-        "text_content": "process_uploaded_files.text_content",
-        "images": "process_uploaded_files.images",
+        "text_content": "process_files.text_content",
+        "images": "process_files.images",
         "captions": "generate_image_captions.captions",
         "screenshot": "fetch_screenshot.screenshot"
       }
@@ -56,7 +61,7 @@
       "label": "Create Page from HTML",
       "inputs": {
         "html": "generate_bootstrap_page_html.html",
-        "images": "process_uploaded_files.images"
+        "images": "process_files.images"
       }
     }
   ]

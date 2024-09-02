@@ -9,11 +9,9 @@ from server.pipeline_step import StepResultDict, PipelineStep
 
 PREVIEW_URL_TEMPLATE = "http://localhost:4003/preview/{jobId}"
 
-
 @dataclass
 class CreatedPage:
-    urls: StepResultDict[str]
-
+    url: str
 
 class CreatePageFromHtmlStep(PipelineStep):
     def __init__(self, job_id: str, job_folder: str, **kwargs: Any):
@@ -27,7 +25,7 @@ class CreatePageFromHtmlStep(PipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Save Page"
+        return "Page from HTML"
 
     @staticmethod
     def get_description() -> str:
@@ -66,7 +64,7 @@ class CreatePageFromHtmlStep(PipelineStep):
             # Return the URLs of the saved images
             page_url = PREVIEW_URL_TEMPLATE.format(jobId=self.job_id)
 
-            return CreatedPage(urls={"url0": page_url})
+            return CreatedPage(url=page_url)
 
         except Exception as e:
             self.push_update(f"An error occurred: {e}")

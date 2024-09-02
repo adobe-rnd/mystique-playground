@@ -13,7 +13,7 @@ class MultiplicationStep(PipelineStep):
 
     @staticmethod
     def get_name() -> str:
-        return "Multiplication Step"
+        return "Multiplication"
 
     @staticmethod
     def get_description() -> str:

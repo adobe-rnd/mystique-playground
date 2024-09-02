@@ -160,8 +160,8 @@ class WebCreator:
                     if job.status == JobStatus.COMPLETED:
                         result = job.result
                         print(f"Job result: {result}")
-                        if 'urls' in job.result:
-                            url = list(job.result.get('urls').values())
+                        if 'url' in job.result:
+                            url = job.result.get('url')
                             print(f"Sending URL: {url}")
                             data["result"] = url
                             data["result_type"] = "url"
