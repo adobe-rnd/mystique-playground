@@ -4,8 +4,6 @@ import os
 
 from PIL import Image
 
-OUTPUT_DIR = 'generated'
-
 
 def create_page_from_data_model(job_folder, page_data_model, inferred_css_vars, all_images):
 

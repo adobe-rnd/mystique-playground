@@ -53,9 +53,6 @@ def extract_markdown_and_images(file_paths: List[str]) -> Tuple[List[str], Dict[
         extracted_images = extract_images_from_docx(file_path)
         image_hash_map.update(extracted_images)
 
-        # Optionally, remove the docx file if needed
-        os.remove(file_path)
-
     return markdown_content, image_hash_map
 
 

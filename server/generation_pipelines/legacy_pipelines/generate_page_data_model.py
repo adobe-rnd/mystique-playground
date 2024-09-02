@@ -13,24 +13,11 @@ import datetime
 import hashlib
 import random
 
-GENERATED_IMAGES_DIR = 'pictures'
-
 
 def generate_dalle_image(dalle, prompt, url_mapping, job_folder):
     data_url = dalle.generate_image(prompt)
-
-    # Save the image to a file
-    os.makedirs('pictures', exist_ok=True)
-    header, encoded = data_url.split(",", 1)
-    file_extension = header.split("/")[-1].split(";")[0]
-    data = base64.b64decode(encoded)
-    filename = 'screenshot_{}.{}'.format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension)
-    with open(os.path.join(GENERATED_IMAGES_DIR, filename), 'wb') as f:
-        f.write(data)
-
     url_hash = hashlib.md5(data_url.encode()).hexdigest()
     url_mapping.update({url_hash: data_url})
-
     return f"/{job_folder}/{url_hash}.png"
 
 

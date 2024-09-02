@@ -201,3 +201,25 @@ export async function captureScreenshot(element, maxWidth = 214, maxHeight = 214
     throw new Error('Error capturing screenshot: ' + error.message);
   }
 }
+
+export function syntaxHighlightJson(json) {
+  if (typeof json != 'string') {
+    json = JSON.stringify(json, undefined, 2);
+  }
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    let style = 'color: #795548;'; // Muted brown for numbers
+    if (/^"/.test(match)) {
+      if (/:$/.test(match)) {
+        style = 'color: #00897b;'; // Teal for keys
+      } else {
+        style = 'color: #388e3c;'; // Green for strings
+      }
+    } else if (/true|false/.test(match)) {
+      style = 'color: #1976d2;'; // Blue for booleans
+    } else if (/null/.test(match)) {
+      style = 'color: #f57c00;'; // Orange for null
+    }
+    return '<span style="' + style + '">' + match + '</span>';
+  });
+}

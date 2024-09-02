@@ -159,9 +159,15 @@ class WebCreator:
                     if job.status == JobStatus.COMPLETED:
                         result = job.result
                         print(f"Job result: {result}")
-                        url = list(job.result.get('urls').values())
-                        print(f"Sending URL: {url}")
-                        data["result"] = url
+                        if 'urls' in job.result:
+                            url = list(job.result.get('urls').values())
+                            print(f"Sending URL: {url}")
+                            data["result"] = url
+                            data["result_type"] = "url"
+                        else:
+                            print(f"Sending result: {result}")
+                            data["result"] = job.result
+                            data["result_type"] = "json"
                     print(f"Sending new updates: {data}")
                     yield f"data: {json.dumps(data)}\n\n"
 
@@ -198,11 +204,14 @@ class WebCreator:
 
     @staticmethod
     def get_generated_pages():
-        return jsonify([f for f in os.listdir(GENERATED_FOLDER) if os.path.isdir(os.path.join(GENERATED_FOLDER, f))])
+        return jsonify([
+            f for f in os.listdir(GENERATED_FOLDER)
+            if os.path.isdir(os.path.join(GENERATED_FOLDER, f)) and
+               os.path.isfile(os.path.join(GENERATED_FOLDER, f, 'index.html'))
+        ])
 
     @staticmethod
     def delete_generated_page(job_id):
-        # also take care of deleting the folder if it is not empty
         try:
             folder_name = job_id
             folder_path = os.path.join(GENERATED_FOLDER, folder_name)

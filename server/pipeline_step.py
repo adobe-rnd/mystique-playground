@@ -8,8 +8,8 @@ StepResultDict = Dict[str, T]
 class PipelineStep(ABC):
     def __init__(self, pipeline: 'Pipeline', **config):
         self.pipeline = pipeline
-        self.config = config  # Holds configuration specific to the step
-        self.inputs: Dict[str, str] = {}  # Holds input mapping configuration
+        self.config = config
+        self.inputs: Dict[str, str] = {}
 
     @staticmethod
     @abstractmethod
@@ -30,7 +30,7 @@ class PipelineStep(ABC):
         pass
 
     @abstractmethod
-    async def process(self, **kwargs: Any) -> Any:
+    async def process(self, **inputs: Any) -> Any:
         """Process the data asynchronously and return the result."""
         pass
 

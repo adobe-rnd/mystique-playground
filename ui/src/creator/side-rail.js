@@ -1,6 +1,6 @@
 import {css, html, LitElement} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
-import {fetchStepsData} from './pipeline-client';
+import {fetchStepsData} from './pipeline-api-client.js';
 
 @customElement('side-rail')
 class SideRail extends LitElement {

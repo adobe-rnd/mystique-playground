@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import List, Any
+from typing import List, Any, Dict
 
 from server.generation_pipelines.legacy_pipelines.create_page_brief import create_page_brief
 from server.generation_pipelines.legacy_pipelines.create_page_from_data_model import create_page_from_data_model

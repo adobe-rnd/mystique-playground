@@ -2,74 +2,22 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { NodeEditor, ClassicPreset } from "rete";
 import { AreaPlugin, AreaExtensions } from "rete-area-plugin";
+import { MinimapExtra, MinimapPlugin } from "rete-minimap-plugin";
 import { ConnectionPlugin, Presets as ConnectionPresets } from "rete-connection-plugin";
 import { LitPlugin, Presets } from "@retejs/lit-plugin";
-import { AutoArrangePlugin, Presets as ArrangePresets } from "rete-auto-arrange-plugin";
 
 import '@spectrum-web-components/picker/sp-picker.js';
 import '@spectrum-web-components/button/sp-button.js';
 import '@spectrum-web-components/progress-circle/sp-progress-circle.js';
 
+import { pipelineEditorStyles } from './pipeline-editor-styles.js';
+
 import './side-rail.js';
-import { fetchPipelineData, fetchPipelines, fetchStepsData } from './pipeline-client';
+import { fetchPipelineData, fetchPipelines, fetchStepsData } from './pipeline-api-client.js';
 
 @customElement('pipeline-editor')
 class PipelineEditor extends LitElement {
-  static styles = css`
-    #editorWrapper {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 10px;
-      width: 100%;
-      height: 100%;
-    }
-
-    #controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    #mainEditor {
-      display: grid;
-      grid-template-columns: 1fr 250px;
-      gap: 20px;
-      height: 100%;
-    }
-
-    #editor-container {
-      border-radius: 5px;
-      position: relative;
-      height: 600px;
-      overflow: hidden;
-      border: 2px dashed #ccc;
-    }
-
-    #editor-container.drag-over {
-      border-color: blue;
-    }
-
-    .progress-container, .center-message {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-    }
-
-    .warning {
-      color: red;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    .icon {
-      font-size: 48px;
-      color: #888;
-      margin-bottom: 10px;
-    }
-  `;
+  static styles = pipelineEditorStyles;
   
   @state() accessor pipelineData = null;
   @state() accessor stepsData = null;
@@ -81,7 +29,6 @@ class PipelineEditor extends LitElement {
   socket = null;
   editor = null;
   area = null;
-  arrange = null;
   
   async firstUpdated() {
     await this.fetchPipelines();
@@ -111,7 +58,6 @@ class PipelineEditor extends LitElement {
     
     this.editor = new NodeEditor();
     this.area = new AreaPlugin(container);
-    this.arrange = new AutoArrangePlugin();
     
     const connection = new ConnectionPlugin();
     const render = new LitPlugin();
@@ -130,6 +76,7 @@ class PipelineEditor extends LitElement {
       };
     })();
     
+    
     // Bind the `selectedNodes` property to the selector
     selector.selectedNodes = this.selectedNodes;
     
@@ -138,14 +85,26 @@ class PipelineEditor extends LitElement {
       accumulating: AreaExtensions.accumulateOnCtrl(),
     });
     
-    render.addPreset(Presets.classic.setup());
+    const minimap = new MinimapPlugin({
+      boundViewport: true
+    });
+    
+    render.addPreset(Presets.classic.setup({
+      customize: {
+        node(context) {
+          console.log('Rendering node:', context.payload);
+          return ({ emit }) => html`<rete-node .data=${context.payload} .emit=${emit}></rete-node>`;
+        }
+      }
+    }));
+    
+    render.addPreset(Presets.minimap.setup({ size: 200 }));
     connection.addPreset(ConnectionPresets.classic.setup());
-    this.arrange.addPreset(ArrangePresets.classic.setup());
     
     this.editor.use(this.area);
-    this.area.use(this.arrange);
     this.area.use(connection);
     this.area.use(render);
+    this.area.use(minimap);
     
     AreaExtensions.simpleNodesOrder(this.area);
   }
@@ -212,6 +171,7 @@ class PipelineEditor extends LitElement {
       : stepDetails.name;
     
     const node = new ClassicPreset.Node(nodeNameWithEllipsis);
+    node.customData = {};
     
     // Add inputs to the node
     for (const inputName of stepDetails.inputs || []) {

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import wretch from 'wretch';
 
 import '@spectrum-web-components/theme/sp-theme.js';
@@ -19,6 +20,7 @@ import './pipeline-editor.js';
 
 import logo from './logo.png';
 import dropzoneIcon from './dropzone-icon.svg';
+import {syntaxHighlightJson} from '../utils';
 
 const DEFAULT_INTENT = [
   'I plan to create a landing page for my new business to effectively promote a new service offering.',
@@ -298,7 +300,6 @@ class MyFirstComponent extends LitElement {
   @state() accessor jobId = '';
   @state() accessor status = null;
   @state() accessor messages = [];
-  @state() accessor result = null;
 
   @state() accessor generatedPages = [];
   
@@ -397,7 +398,6 @@ class MyFirstComponent extends LitElement {
     this.jobId = null;
     this.status = null;
     this.messages = [];
-    this.result = null;
     
     if (this.files.length === 0 && !this.websiteUrl) {
       this.addMessage('No files or URL to process.');
@@ -444,8 +444,15 @@ class MyFirstComponent extends LitElement {
       }
       if (data.status === 'completed') {
         this.addMessage('Job completed successfully!');
-        this.result = data.result;
         this.status = 'completed';
+        const resultType = data.result_type;
+        if (resultType === 'url') {
+          this.addMessage(`Generated page URL: <a href="${data.result}" target="_blank">${data.result}</a>`);
+        } else if (resultType === 'json') {
+          this.addMessage('Result: ' + syntaxHighlightJson(JSON.stringify(data.result).replace(/\n/g, '')));
+        } else {
+          this.addMessage('Result: ' + data.result);
+        }
         this.fetchGeneratedPages();
       } else if (data.status === 'error') {
         this.addMessage('Job failed with an error!');
@@ -475,10 +482,6 @@ class MyFirstComponent extends LitElement {
     setTimeout(() => {
       window.scrollTo(0, document.body.scrollHeight);
     }, 300);
-  }
-  
-  previewMarkup() {
-    window.open(this.result, '_blank');
   }
   
   deletePage(pageId) {
@@ -566,14 +569,13 @@ class MyFirstComponent extends LitElement {
                 ${(this.status && (this.status !== 'completed' && this.status !== 'error') && index === this.messages.length - 1) ? html`
                   <sp-progress-circle indeterminate size="s"></sp-progress-circle>
                 ` : ''}
-                ${status}
+                ${unsafeHTML(status)}
               </div>
             `)}
           </div>
         </div>
         <div class="buttons-container">
           <sp-button variant="primary" size="L" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Generate</sp-button>
-          <sp-button variant="accent" size="L" @click="${() => this.previewMarkup(this.jobId)}" ?disabled="${this.status !== 'completed'}">Preview</sp-button>
         </div>
       </div>
     `;
@@ -591,7 +593,7 @@ class MyFirstComponent extends LitElement {
                 <div class="generated-page-item">
                   <iframe src="http://localhost:4003/preview/${page}" width="100%" scrolling="no"></iframe>
                   <div class="buttons">
-                    <sp-button variant="accent" size="S" @click="${() => this.previewMarkup(page)}">Preview</sp-button>
+                    <sp-button variant="accent" size="S" @click="${() => open(`http://localhost:4003/preview/${page}`, '_blank')}">Preview</sp-button>
                     <sp-button variant="negative" size="S" @click="${() => this.deletePage(page)}">Delete</sp-button>
                   </div>
                 </div>

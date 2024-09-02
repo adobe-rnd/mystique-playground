@@ -1,0 +1,64 @@
+{
+  "id": "arithmetic_pipeline",
+  "name": "Arithmetic Operations Pipeline",
+  "description": "A pipeline that performs a series of arithmetic operations (addition, subtraction, multiplication, division) on two input numbers.",
+  "properties": {},
+  "inputs": {
+    "a": 10,
+    "b": 5
+  },
+  "outputs": {
+    "addition_result": "addition_step.result",
+    "subtraction_result": "subtraction_step.result",
+    "multiplication_result": "multiplication_step.result",
+    "division1_result": "division_step1.result",
+    "division2_result": "division_step2.result"
+  },
+  "steps": [
+    {
+      "id": "addition_step",
+      "type": "addition_step",
+      "label": "Addition Step",
+      "inputs": {
+        "a": "inputs.a",
+        "b": "inputs.b"
+      }
+    },
+    {
+      "id": "subtraction_step",
+      "type": "subtraction_step",
+      "label": "Subtraction Step",
+      "inputs": {
+        "a": "inputs.a",
+        "b": "inputs.b"
+      }
+    },
+    {
+      "id": "multiplication_step",
+      "type": "multiplication_step",
+      "label": "Multiplication Step",
+      "inputs": {
+        "a": "inputs.a",
+        "b": "inputs.b"
+      }
+    },
+    {
+      "id": "division_step1",
+      "type": "division_step",
+      "label": "Division Step 1",
+      "inputs": {
+        "a": "inputs.a",
+        "b": "inputs.b"
+      }
+    },
+    {
+      "id": "division_step2",
+      "type": "division_step",
+      "label": "Division Step 2",
+      "inputs": {
+        "a": "multiplication_step.result",
+        "b": "division_step1.result"
+      }
+    }
+  ]
+}

@@ -2,31 +2,51 @@
   "id": "bootstrap_pipeline",
   "name": "Bootstrap Pipeline",
   "description": "This pipeline is used to generate a page using the Bootstrap framework.",
-  "inputs": [
-    "uploaded_files",
-    "user_intent",
-    "website_url"
-  ],
+  "properties": {
+    "max_width": 1200,
+    "max_height": 1200
+  },
+  "inputs": {
+    "uploaded_files": null,
+    "user_intent": null,
+    "website_url": null
+  },
+  "outputs": {
+    "urls": "create_page_from_html.urls"
+  },
   "steps": [
     {
       "id": "process_uploaded_files",
+      "type": "process_uploaded_files",
+      "label": "Process Uploaded Files",
       "inputs": {
-        "uploaded_files": "inputs.uploaded_files",
-        "website_url": "inputs.website_url"
+        "uploaded_files": "inputs.uploaded_files"
       }
     },
     {
       "id": "fetch_html_and_screenshot",
-      "inputs": {}
+      "type": "fetch_html_and_screenshot",
+      "label": "Fetch HTML and Screenshot",
+      "inputs": {
+        "website_url": "inputs.website_url"
+      },
+      "config": {
+        "max_width":"${properties.max_width}",
+        "max_height": "${properties.max_height}"
+      }
     },
     {
       "id": "generate_image_captions",
+      "type": "generate_image_captions",
+      "label": "Generate Image Captions",
       "inputs": {
         "images": "process_uploaded_files.images"
       }
     },
     {
       "id": "generate_bootstrap_page_html",
+      "type": "generate_bootstrap_page_html",
+      "label": "Generate Bootstrap Page HTML",
       "inputs": {
         "text_content": "process_uploaded_files.text_content",
         "images": "process_uploaded_files.images",
@@ -36,13 +56,12 @@
     },
     {
       "id": "create_page_from_html",
+      "type": "create_page_from_html",
+      "label": "Create Page from HTML",
       "inputs": {
         "html": "generate_bootstrap_page_html.html",
         "images": "process_uploaded_files.images"
       }
     }
-  ],
-  "outputs": {
-      "urls": "create_page_from_html.urls"
-  }
+  ]
 }

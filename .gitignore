@@ -6,6 +6,7 @@ dist/
 screenshots/
 uploads/
 generated/
+results/
 pictures/
 __pycache__/
 .env
