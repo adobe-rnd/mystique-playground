@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
+from server.generation_pipelines.pipeline_steps.generate_css_vars import css_variables, generate_css_vars
 from server.pipeline_step import PipelineStep
 import json
-from server.generation_pipelines.legacy_pipelines.generate_css_vars import css_variables, generate_css_vars
 from server.shared.llm import parse_markdown_output, LlmClient, ModelType
 
 @dataclass

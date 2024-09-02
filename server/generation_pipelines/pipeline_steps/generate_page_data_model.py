@@ -1,11 +1,11 @@
 import hashlib
 from dataclasses import dataclass
 
+from server.generation_pipelines.pipeline_steps.read_schemas import bundle_schemas
 from server.pipeline_step import PipelineStep
 import json
 from typing import Dict
 from jsonschema.validators import validate
-from server.generation_pipelines.legacy_pipelines.read_schemas import bundle_schemas
 from server.shared.dalle import DalleClient
 from server.shared.llm import LlmClient, ModelType, parse_markdown_output
 

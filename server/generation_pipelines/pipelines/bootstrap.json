@@ -28,12 +28,6 @@
       "config": {
         "max_width": 1200,
         "max_height": 1200
-      },
-      "_editor": {
-        "position": {
-          "x": 200,
-          "y": 200
-        }
       }
     },
     {
