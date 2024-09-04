@@ -8,9 +8,11 @@ from server.pipeline_step import PipelineStep, StepResultDict
 
 PREVIEW_URL_TEMPLATE = "http://localhost:4003/preview/{jobId}"
 
+
 @dataclass
 class StepResult:
     url: str
+
 
 class CreatePageFromDataModelStep(PipelineStep):
     def __init__(self, job_id: str, job_folder: str, **kwargs):
@@ -19,7 +21,7 @@ class CreatePageFromDataModelStep(PipelineStep):
         self.job_folder = job_folder
 
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "create_page_from_data_model"
 
     @staticmethod

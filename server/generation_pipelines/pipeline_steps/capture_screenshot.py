@@ -7,9 +7,11 @@ from server.shared.image import crop_and_downscale_image
 from server.shared.llm import LlmClient, ModelType, parse_markdown_output
 from server.shared.scraper import WebScraper
 
+
 @dataclass
 class ScreenshotResult:
     screenshot: bytes
+
 
 def get_buttons_and_links_with_essential_attributes(html_content: str) -> list[str]:
     soup = BeautifulSoup(html_content, "html.parser")
@@ -49,6 +51,7 @@ def get_buttons_and_links_with_essential_attributes(html_content: str) -> list[s
 
     return cleaned_html_list
 
+
 class FetchScreenshotStep(PipelineStep):
     def __init__(self, job_folder: str, max_width: int = 1024, max_height: int = 1024, **kwargs):
         super().__init__(**kwargs)
@@ -59,7 +62,7 @@ class FetchScreenshotStep(PipelineStep):
         self.job_folder = job_folder
 
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "fetch_screenshot"
 
     @staticmethod

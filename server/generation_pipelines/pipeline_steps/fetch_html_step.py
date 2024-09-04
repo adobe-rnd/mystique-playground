@@ -7,12 +7,13 @@ from server.shared.scraper import WebScraper
 class HtmlResult:
     html: str
 
+
 class FetchHtmlStep(PipelineStep):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "fetch_html"
 
     @staticmethod

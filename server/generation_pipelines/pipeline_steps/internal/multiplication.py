@@ -8,7 +8,7 @@ class ProcessResult:
 
 class MultiplicationStep(PipelineStep):
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "multiplication_step"
 
     @staticmethod

@@ -1,20 +1,24 @@
 import inspect
+import json
 import os
 import importlib.util
 from concurrent.futures import as_completed
 from concurrent.futures.thread import ThreadPoolExecutor
-from pathlib import Path
-from typing import Dict, List, Any, Type, get_type_hints, Union
+from typing import Dict, List, Any
 import asyncio
 
 from server.job_manager import Job
+from server.nested_pipeline_step import NestedPipelineStep
+from server.pipeline_metadata_extractor import PipelineStepsMetadataExtractor
 from server.pipeline_step import PipelineStep
 
 
 class Pipeline(Job):
-    def __init__(self, job_id: str, config: Union[str, Dict[str, Any]], steps_folder: str, initial_params: Dict[str, Any], pipeline_context: Dict[str, Any] = None):
+    def __init__(self, job_id: str, definition: Dict[str, Any], steps_folder: str, pipelines_folder: str, initial_params: Dict[str, Any], pipeline_context: Dict[str, Any] = None):
         super().__init__(job_id=job_id)
-        self.steps: Dict[str, Type[PipelineStep]] = {}
+        self.steps_folder = steps_folder
+        self.pipelines_folder = pipelines_folder
+
         self.step_instances: Dict[str, PipelineStep] = {}
         self.step_dependencies: Dict[str, List[str]] = {}
         self.step_results: Dict[str, Any] = {}
@@ -23,31 +27,39 @@ class Pipeline(Job):
         self.initial_params = initial_params
         self.properties: Dict[str, Any] = {}
         self.output_mapping: Dict[str, str] = {}
-        self.step_labels: Dict[str, str] = {}  # To store step labels
+        self.step_labels: Dict[str, str] = {}
+        self.steps_definitions: Dict[str, Dict[str, Any]] = {}
+        self.pipeline_definitions: Dict[str, Dict[str, Any]] = {}
 
         self.discover_steps(steps_folder)
-        self.create_pipeline_from_json(config)
+        self.discover_pipelines(pipelines_folder)
+        print(f"Discovered steps: {self.pipeline_definitions}")
+        print(f"Discovered pipelines: {self.pipeline_definitions}")
+
+        self.create_pipeline_from_json(definition)
 
     def discover_steps(self, folder: str):
-        for root, _, files in os.walk(folder):
-            for file in files:
-                if file.endswith(".py"):
-                    module_path = os.path.join(root, file)
-                    self._load_module_from_path(module_path)
+        extractor = PipelineStepsMetadataExtractor(folder, folder)
+        extracted_steps_metadata = extractor.extract_pipeline_steps()
 
-    def _load_module_from_path(self, module_path: str):
-        module_name = Path(module_path).stem
-        spec = importlib.util.spec_from_file_location(module_name, module_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        for step_metadata in extracted_steps_metadata:
+            step_type = step_metadata['type']
+            self.steps_definitions[step_type] = step_metadata
 
-        for attribute_name in dir(module):
-            attribute = getattr(module, attribute_name)
-            if isinstance(attribute, type) and issubclass(attribute, PipelineStep) and attribute is not PipelineStep:
-                self.steps[attribute.get_unique_id()] = attribute
+    def discover_pipelines(self, folder: str):
+        for dirpath, _, filenames in os.walk(folder):
+            for filename in filenames:
+                if filename.endswith(".json"):
+                    file_path = os.path.join(dirpath, filename)
+                    with open(file_path, 'r') as file:
+                        try:
+                            pipeline_data = json.load(file)
+                            pipeline_id = pipeline_data.get("id")
+                            self.pipeline_definitions[pipeline_id] = pipeline_data
+                        except json.JSONDecodeError:
+                            print(f"Failed to parse JSON in {file_path}")
 
-    def create_pipeline_from_json(self, config: Union[Dict[str, Any]]):
-        self.properties = config.get("properties", {})
+    def create_pipeline_from_json(self, config: Dict[str, Any]):
         self.global_inputs = {
             input_name: input_value if input_value is not None else None
             for input_name, input_value in config.get("inputs", {}).items()
@@ -58,27 +70,55 @@ class Pipeline(Job):
         step_ids = {step["id"] for step in config["steps"]}
 
         for step_config in config["steps"]:
-            step_id = step_config.get("id")  # Use unique ID
+            step_id = step_config.get("id")
             step_type = step_config.get("type")
             step_label = step_config.get("label", None)
             inputs = step_config.get("inputs", {})
-            step_instance_config = self._resolve_references_in_config(step_config.get("config", {}))
+            step_instance_config = step_config.get("config", {})
 
             # Validate input references using extracted step IDs
             self.validate_input_references(inputs, step_id, step_ids)
 
-            if step_type in self.steps:
-                step_class = self.steps[step_type]
-                step_instance = step_class(pipeline=self, **step_instance_config, **self.pipeline_context)
-                step_instance.inputs = inputs
+            print(f"Creating step instance for step '{step_id}' of type '{step_type}'")
+
+            # Handle all steps using metadata
+            if step_type in self.steps_definitions or step_type == "pipeline":
+                if step_type == "pipeline":
+                    pipeline_id = step_instance_config.get("pipeline_id")
+                    # Use the metadata to resolve inputs
+                    print(f"Creating nested pipeline step with definition: {pipeline_id}")
+                    # nested_pipeline_inputs = {
+                    #     input_key: self.global_inputs.get(input_value.split('.', 1)[1], None)
+                    #     if input_value.startswith('inputs.') else self.step_results.get(input_value.split('.')[0], {}).get(input_value.split('.')[1], None)
+                    #     for input_key, input_value in inputs.items()
+                    # }
+                    # print(f"Resolved inputs for nested pipeline: {nested_pipeline_inputs}")
+                    step_instance = NestedPipelineStep(
+                        pipeline=self,
+                        definition=self.pipeline_definitions.get(pipeline_id)
+                    )
+                    print(f"Created nested pipeline step instance: {step_instance}")
+                    step_instance.inputs = inputs
+                    print(f"Set inputs for nested pipeline step instance: {step_instance.inputs}")
+                else:
+                    step_class = self.steps_definitions.get(step_type).get('class')
+                    step_module = self.steps_definitions.get(step_type).get('module')
+                    module = importlib.import_module(step_module)
+                    full_class_name = getattr(module, step_class)
+                    step_instance = full_class_name(pipeline=self, **step_instance_config, **self.pipeline_context)
+                    step_instance.inputs = inputs
 
                 if step_label:
                     self.step_labels[step_id] = step_label
 
+                print(f"Created step instance for step '{step_id}' of type '{step_type}'")
+
                 # Register the step instance using its unique ID
                 self.register_step(step_instance, step_id)
             else:
-                raise ValueError(f"Step type '{step_type}' not found in discovered steps.")
+                raise ValueError(f"Step ID '{step_type}' not found in the extracted steps metadata.")
+
+        print(f"Step instances: {self.step_instances}")
 
         self._resolve_dependencies(step_ids)
 
@@ -93,12 +133,17 @@ class Pipeline(Job):
         self.step_instances[step_id] = step
         self.step_dependencies[step_id] = []
 
+        print(f"Registered step '{step_id}'")
+
     def _resolve_dependencies(self, step_ids: set):
         for step_id, step_instance in self.step_instances.items():
+            print(f"Resolving dependencies for step '{step_id}'")
             inputs = step_instance.inputs
+            print(f"Inputs for step '{step_id}': {inputs}")
             dependencies = set()
 
             for input_name, source in inputs.items():
+                print(f"Processing input '{input_name}' with source '{source}'")
                 if '.' in source:
                     parts = source.split('.')
                     if len(parts) == 2:
@@ -162,9 +207,13 @@ class Pipeline(Job):
 
                 # Determine which steps are ready to run next
                 steps_to_run = []
+                print("Checking dependencies for next steps...")
                 for step_id, deps in self.step_dependencies.items():
                     if step_id not in completed_steps:
                         # Check if all dependencies for this step have been completed
+
+                        print(f"Checking dependencies for step '{step_id}': {deps}")
+
                         all_deps_completed = all(
                             dep in completed_steps or dep == 'inputs' for dep in deps
                         )
@@ -186,16 +235,26 @@ class Pipeline(Job):
 
     def run_step(self, step_id: str, initial_params: Dict[str, Any] = None):
         step = self.step_instances[step_id]
+
+        print(f"Running step '{step_id}' with initial params: {initial_params}")
+
         input_data = initial_params if initial_params is not None else self.prepare_input_for_step(step)
+
+        print(f"Prepared input data for step '{step_id}': {input_data}")
+
         self.validate_inputs(step, input_data)
+
+        print(f"Validated inputs for step '{step_id}'")
 
         # Use the label for updates if available; otherwise, use the step name
         step_label = self.step_labels.get(step_id, step.get_name())
         self.push_update(f"Running step '{step_label}'...")
 
         if inspect.iscoroutinefunction(step.process):
+            print(f"Running step '{step_id}' asynchronously...")
             result = asyncio.run(step.process(**input_data))
         else:
+            print(f"Running step '{step_id}' synchronously...")
             result = step.process(**input_data)
 
         print(f"Step '{step_id}' completed execution.")
@@ -203,18 +262,28 @@ class Pipeline(Job):
         self.step_results[step_id] = result
 
     def validate_inputs(self, step: PipelineStep, input_data: Dict[str, Any]):
-        required_inputs = self.get_step_input_types(step.__class__).keys()
-        filtered_required_inputs = [input_name for input_name in required_inputs if input_name not in ('args', 'kwargs')]
+        step_type = step.get_type()
+        print(f"Validating inputs for step '{step.get_name()}' of type '{step_type}'")
+        print(f"Step definitions: {self.steps_definitions}")
 
-        missing_inputs = [input_name for input_name in filtered_required_inputs if input_name not in input_data]
+        if isinstance(step, NestedPipelineStep):
+            # If the step is a nested pipeline, retrieve the nested pipeline's definition
+            nested_pipeline_def = self.pipeline_definitions.get(step.definition.get("id"))
+            if not nested_pipeline_def:
+                raise ValueError(f"Definition for nested pipeline '{step.get_name()}' not found.")
+
+            # Extract required inputs from the nested pipeline definition
+            required_inputs = nested_pipeline_def.get('inputs', [])
+        else:
+            # For regular steps, get the required inputs from step definitions
+            required_inputs = self.steps_definitions[step_type].get('inputs', [])
+
+        print(f"Required inputs for step '{step.get_name()}': {required_inputs}")
+        missing_inputs = [input_name for input_name in required_inputs if input_name not in input_data]
+        print(f"Missing inputs for step '{step.get_name()}': {missing_inputs}")
 
         if missing_inputs:
             raise ValueError(f"Missing required inputs for step '{step.get_name()}': {', '.join(missing_inputs)}")
-
-        # Validate that literal values are correct if necessary
-        for input_name, value in input_data.items():
-            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
-                raise ValueError(f"Input '{input_name}' for step '{step.get_name()}' contains unresolved reference '{value}'.")
 
     def validate_input_references(self, inputs: Dict[str, str], step_id: str, step_ids: set):
         for source in inputs.values():
@@ -228,7 +297,7 @@ class Pipeline(Job):
                 raise ValueError(f"Invalid input source '{source}' for step '{step_id}'. Must reference a global input or a valid step defined in the pipeline.")
 
     def prepare_input_for_step(self, step: PipelineStep) -> Dict[str, Any]:
-        step_id = step.get_unique_id()
+        step_id = step.get_type()
         inputs = {}
 
         print(f"Preparing inputs for step '{step_id}'")
@@ -281,11 +350,3 @@ class Pipeline(Job):
                 else:
                     outputs[output_name] = getattr(result, field_name, None)
         return outputs
-
-    def get_step_input_types(self, step_class: Type[PipelineStep]) -> Dict[str, Type]:
-        type_hints = get_type_hints(step_class.process)
-        return {k: v for k, v in type_hints.items() if k != 'self' and k != 'return'}
-
-    def get_step_output_type(self, step_class: Type[PipelineStep]) -> Type:
-        type_hints = get_type_hints(step_class.process)
-        return type_hints.get('return', Any)

@@ -105,6 +105,8 @@ class PipelineEditor extends LitElement {
             nodeColor = '#f44336'; // Red for output nodes
           } else if (nodeType === 'processing') {
             nodeColor = '#2196f3'; // Blue for processing nodes
+          } else if (nodeType === 'pipeline') {
+            nodeColor = '#ff9800'; // Orange for pipeline nodes
           }
           
           // Return the custom node template
@@ -151,7 +153,7 @@ class PipelineEditor extends LitElement {
     
     // Step 3: Add pipeline step nodes
     for (const step of this.pipelineData.steps) {
-      const stepDetails = this.stepsData.find(s => s.id === step.type);
+      const stepDetails = this.stepsData.find(s => s.type === step.type || s.type === step?.config?.pipeline_id);
       if (stepDetails) {
         const node = this.createNode(step, stepDetails, this.socket);
         nodesMap.set(step.id, node);
@@ -167,13 +169,17 @@ class PipelineEditor extends LitElement {
         Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
           let sourceNodeId, outputName;
           
+          console.log('step:', step.type, 'input:', inputName, 'value:', inputValue);
+          
           // Check if the input comes from the global inputs
           if (inputValue.startsWith("inputs.")) {
             sourceNodeId = inputValue; // Directly use inputValue as it already contains the global input node identifier
-            outputName = inputName; // The output from the global input node will have the same name as the input
+            outputName = inputValue.split('.')[1]; // Extract the output name from the global input
+            console.log('Input1:', inputName, sourceNodeId, outputName);
           } else {
             // If not a global input, split as usual
             [sourceNodeId, outputName] = inputValue.split('.');
+            console.log('Input2:', inputName, sourceNodeId, outputName);
           }
           
           const sourceNode = nodesMap.get(sourceNodeId);
@@ -186,7 +192,11 @@ class PipelineEditor extends LitElement {
               this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
             } else {
               console.warn(`Cannot find matching socket for input: ${inputName} or output: ${outputName}`);
+              console.log('Source Node:', sourceNode);
+              console.log('Target Node:', node);
             }
+          } else {
+            console.warn(`Cannot find source node with ID: ${sourceNodeId}`);
           }
         });
       }
@@ -252,7 +262,7 @@ class PipelineEditor extends LitElement {
       node.addOutput(outputName, new ClassicPreset.Output(socket, outputName));
     }
     
-    node.type = 'processing'; // Add type property
+    node.type = step.type === 'pipeline' ? 'pipeline' : 'processing'; // Add type property
     return node;
   }
   
@@ -326,13 +336,11 @@ class PipelineEditor extends LitElement {
     // Separate nodes into input, output, and processing types
     const inputNodes = nodes.filter(node => node.type === 'input');
     const outputNodes = nodes.filter(node => node.type === 'output');
-    const processingNodes = nodes.filter(node => node.type === 'processing');
+    const processingNodes = nodes.filter(node => node.type === 'processing' || node.type === 'pipeline');
     
     // Function to get the real height of a node by querying the DOM
     const getNodeHeight = (node) => {
-      console.log('Node:', node);
       const element = this.renderRoot.querySelector(`[data-node-id="${node.id}"]`); // Use the data attribute to find the element
-      console.log('Element:', element);
       return element ? element.offsetHeight : 150; // Default height if element is not found
     };
     

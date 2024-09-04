@@ -11,7 +11,7 @@ class AdditionStep(PipelineStep):
         super().__init__(**config)
 
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "addition_step"
 
     @staticmethod

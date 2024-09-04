@@ -16,7 +16,7 @@ class GenerateBootstrapPageHtmlStep(PipelineStep):
         self.job_folder = job_folder
 
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "generate_bootstrap_page_html"
 
     @staticmethod

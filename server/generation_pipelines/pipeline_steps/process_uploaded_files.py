@@ -91,7 +91,7 @@ class TextContentAndImages:
 
 class ProcessUploadedFilesStep(PipelineStep):
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "process_files"
 
     @staticmethod

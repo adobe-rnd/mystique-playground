@@ -5,13 +5,15 @@ from server.pipeline_step import PipelineStep
 import json
 from server.shared.llm import parse_markdown_output, LlmClient, ModelType
 
+
 @dataclass
 class StepResult:
     css_vars: str
 
+
 class GenerateCssVariablesStep(PipelineStep):
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "generate_css_variables"
 
     @staticmethod

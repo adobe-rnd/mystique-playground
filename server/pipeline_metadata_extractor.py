@@ -2,6 +2,7 @@ import importlib.util
 import typing
 from typing import TypedDict, get_origin
 
+from server.nested_pipeline_step import NestedPipelineStep
 from server.pipeline_step import PipelineStep
 
 
@@ -9,23 +10,61 @@ import os
 import importlib.util
 import inspect
 import json
-from abc import ABC
 from dataclasses import is_dataclass, fields
 
 
-class PipelineMetadataExtractor:
-    def __init__(self, root_folder: str):
-        self.root_folder = root_folder
+class PipelineStepsMetadataExtractor:
+    def __init__(self, steps_folder: str, pipelines_folder: str):
+        self.steps_folder = steps_folder
+        self.pipelines_folder = pipelines_folder
 
     def extract_pipeline_steps(self):
         pipeline_steps = []
-        for dirpath, _, filenames in os.walk(self.root_folder):
+
+        # Extract individual steps from the steps folder
+        pipeline_steps.extend(self._extract_steps_from_folder(self.steps_folder))
+
+        # Extract pipelines and treat them as steps
+        pipeline_steps.extend(self._extract_pipelines_as_steps(self.pipelines_folder))
+
+        return pipeline_steps
+
+    def _extract_steps_from_folder(self, steps_folder: str):
+        """Extracts individual pipeline steps from the steps folder."""
+        pipeline_steps = []
+        for dirpath, _, filenames in os.walk(steps_folder):
             for filename in filenames:
                 if filename.endswith(".py"):
                     module_path = os.path.join(dirpath, filename)
                     module_name = self._get_module_name_from_path(module_path)
                     pipeline_steps.extend(self._extract_from_module(module_path, module_name))
         return pipeline_steps
+
+    def _extract_pipelines_as_steps(self, pipelines_folder: str):
+        pipeline_steps = []
+        for dirpath, _, filenames in os.walk(pipelines_folder):
+            for filename in filenames:
+                if filename.endswith(".json"):  # Assuming pipeline definitions are in JSON files
+                    file_path = os.path.join(dirpath, filename)
+                    with open(file_path, 'r') as file:
+                        try:
+                            pipeline_data = json.load(file)
+                            pipeline_metadata = self._extract_pipeline_metadata(pipeline_data)
+                            pipeline_steps.append(pipeline_metadata)
+                        except json.JSONDecodeError:
+                            print(f"Failed to parse JSON in {file_path}")
+        return pipeline_steps
+
+    def _extract_pipeline_metadata(self, pipeline_data: dict):
+        return {
+            "type": pipeline_data.get("id"),
+            "class": NestedPipelineStep.__name__,
+            "module": NestedPipelineStep.__module__,
+            "name": pipeline_data.get("name"),
+            "description": pipeline_data.get("description"),
+            "inputs": list(pipeline_data.get("inputs", {}).keys()),
+            "outputs": list(pipeline_data.get("outputs", {}).keys()),
+        }
 
     def _get_module_name_from_path(self, module_path: str) -> str:
         """Generates a module name based on the file path."""
@@ -47,8 +86,12 @@ class PipelineMetadataExtractor:
         return issubclass(cls, PipelineStep) and cls is not PipelineStep and not inspect.isabstract(cls)
 
     def _extract_metadata(self, cls):
+        print(f"Extracting metadata for class: {cls.__name__}")
+        print(f"Module: {cls.__module__}")
         metadata = {
-            "id": self._safe_call(cls, "get_unique_id"),
+            "type": self._safe_call(cls, "get_type"),
+            "class": cls.__name__,
+            "module": cls.__module__,
             "name": self._safe_call(cls, "get_name"),
             "description": self._safe_call(cls, "get_description"),
             "inputs": [],
@@ -92,12 +135,13 @@ class PipelineMetadataExtractor:
             return None
 
 
-def extract_pipeline_metadata(root_folder: str) -> str:
-    extractor = PipelineMetadataExtractor(root_folder)
+def extract_pipeline_metadata(steps_folder: str, pipelines_folder: str):
+    extractor = PipelineStepsMetadataExtractor(steps_folder, pipelines_folder)
     pipeline_steps = extractor.extract_pipeline_steps()
     return json.dumps(pipeline_steps, indent=4)
 
 # Example usage
 if __name__ == "__main__":
-    root_folder = "server/generation_pipelines/pipeline_steps"
-    print(extract_pipeline_metadata(root_folder))
+    steps_folder = "server/generation_pipelines/pipeline_steps"
+    pipelines_folder = "server/generation_pipelines/pipelines"
+    print(extract_pipeline_metadata(steps_folder, pipelines_folder))

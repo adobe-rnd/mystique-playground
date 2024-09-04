@@ -38,7 +38,7 @@ export class HeaderComponent extends HTMLElement {
         }
 
         nav a {
-          color: var(--brand-text-color, #333);
+          color: white;
           font-family: var(--brand-font-family, Arial, sans-serif);
           font-size: var(--brand-font-size, 16px);
           text-decoration: none;

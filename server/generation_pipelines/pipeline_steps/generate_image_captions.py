@@ -65,7 +65,7 @@ class ImageCaptions:
 
 class GenerateImageCaptionsStep(PipelineStep):
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "generate_image_captions"
 
     @staticmethod

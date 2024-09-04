@@ -11,7 +11,7 @@ from flask_cors import CORS
 
 from server.job_manager import JobManager, JobStatus
 from server.pipeline import Pipeline
-from server.pipeline_metadata_extractor import PipelineMetadataExtractor
+from server.pipeline_metadata_extractor import PipelineStepsMetadataExtractor
 from server.shared.file_utils import handle_file_upload
 
 PIPELINE_FOLDER_PATH = "server/generation_pipelines/pipelines"
@@ -44,10 +44,6 @@ class WebCreator:
         self.app.register_blueprint(Blueprint('generated', __name__, static_folder='../generated'))
         self.job_manager = JobManager()
         self.register_routes()
-        self.pipelines = load_pipelines_from_folder(PIPELINE_FOLDER_PATH)
-        self.pipeline_metadata_extractor = PipelineMetadataExtractor(PIPELINE_STEP_FOLDER_PATH)
-
-        print(self.pipelines)
 
         CORS(self.app)
 
@@ -78,7 +74,8 @@ class WebCreator:
 
     def create_pipeline(self, pipeline_id, job_id, job_folder, initial_params):
         print(f"Creating pipeline: {pipeline_id}")
-        pipeline = self.pipelines.get(pipeline_id)
+        pipelines = load_pipelines_from_folder(PIPELINE_FOLDER_PATH)
+        pipeline = pipelines.get(pipeline_id)
         if not pipeline:
             raise ValueError(f"Pipeline not found: {pipeline_id}")
 
@@ -93,7 +90,14 @@ class WebCreator:
         }
         print(f"Pipeline context: {pipeline_context}")
 
-        pipeline = Pipeline(job_id=job_id, config=config, steps_folder='server/generation_pipelines/pipeline_steps', initial_params=initial_params, pipeline_context=pipeline_context)
+        pipeline = Pipeline(
+            job_id=job_id,
+            definition=config,
+            steps_folder=PIPELINE_STEP_FOLDER_PATH,
+            pipelines_folder=PIPELINE_FOLDER_PATH,
+            initial_params=initial_params,
+            pipeline_context=pipeline_context
+        )
 
         print(f"Pipeline created: {pipeline}")
 
@@ -183,7 +187,8 @@ class WebCreator:
 
     def get_pipeline_steps(self):
         try:
-            steps = self.pipeline_metadata_extractor.extract_pipeline_steps()
+            pipeline_metadata_extractor = PipelineStepsMetadataExtractor(PIPELINE_STEP_FOLDER_PATH, PIPELINE_FOLDER_PATH)
+            steps = pipeline_metadata_extractor.extract_pipeline_steps()
             print(f"Detected pipeline steps: {steps}")
             return jsonify(steps)
         except Exception as e:
@@ -192,14 +197,13 @@ class WebCreator:
 
     @staticmethod
     def get_pipelines():
-        pipelines = []
-        for root, _, files in os.walk(PIPELINE_FOLDER_PATH):  # Use os.walk to traverse subdirectories
-            for filename in files:
-                if filename.endswith(".json"):
-                    with open(os.path.join(root, filename)) as f:
-                        pipeline = json.load(f)
-                        pipelines.append(pipeline)
-        return jsonify(pipelines)
+        try:
+            pipelines = load_pipelines_from_folder(PIPELINE_FOLDER_PATH)
+            print(f"Loaded pipelines: {pipelines}")
+            return jsonify([pipeline.get('config') for pipeline in pipelines.values()])
+        except Exception as e:
+            print(f"Error loading pipelines: {e}")
+            return jsonify({"error": str(e)}), 500
 
     @staticmethod
     def get_pipeline_by_id(pipeline_id):

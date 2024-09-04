@@ -11,7 +11,7 @@ class DivisionStep(PipelineStep):
         super().__init__(**config)
 
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "division_step"
 
     @staticmethod

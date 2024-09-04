@@ -10,7 +10,7 @@ class StepResult:
 
 class GeneratePageContentStep(PipelineStep):
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "generate_page_content"
 
     @staticmethod
@@ -35,6 +35,10 @@ class GeneratePageContentStep(PipelineStep):
             
                 User intent:
                 {user_intent}
+                
+                Structure your content the way you would for a web page.
+                Position the most important information at the top.
+                Propose a call-to-action at the end. 
             
                 Begin your response with the crafted content for the web page.
                 '''

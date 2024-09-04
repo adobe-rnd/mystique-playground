@@ -8,7 +8,7 @@ class ProcessResult:
 
 class SubtractionStep(PipelineStep):
     @staticmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         return "subtraction_step"
 
     @staticmethod

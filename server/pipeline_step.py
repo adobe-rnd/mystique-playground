@@ -13,7 +13,7 @@ class PipelineStep(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_unique_id() -> str:
+    def get_type() -> str:
         """Return a unique identifier for the step."""
         pass
 

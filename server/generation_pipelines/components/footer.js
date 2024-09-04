@@ -22,7 +22,7 @@ export class FooterComponent extends HTMLElement {
           align-items: center;
           padding: var(--brand-padding-medium, 16px);
           background-color: var(--brand-primary-color, #f8f8f8);
-          color: var(--brand-text-color, #333);
+          color: white;
           border-radius: var(--brand-border-radius, 8px);
           text-align: ${alignment};
         }
@@ -38,7 +38,7 @@ export class FooterComponent extends HTMLElement {
         }
 
         .footer-links a {
-          color: var(--brand-link-color, #007BFF);
+          color: white;
           text-decoration: none;
           transition: color 0.3s ease;
         }
