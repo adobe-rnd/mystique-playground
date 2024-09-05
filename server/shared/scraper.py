@@ -43,7 +43,10 @@ class WebScraper:
                 await page.wait_for_timeout(wait_time)
 
             if consent_popup_button_selector:
-                await page.locator(consent_popup_button_selector).click()
+                try:
+                    await page.locator(consent_popup_button_selector).click(timeout=10000)
+                except Exception as e:
+                    print("Consent popup button not found")
 
             screenshot_data = await page.locator(selector).first.screenshot()
             screenshot = Image.open(BytesIO(screenshot_data))

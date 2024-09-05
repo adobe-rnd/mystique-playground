@@ -1,0 +1,32 @@
+{
+  "id": "aesthetic_score_pipeline",
+  "name": "Aesthetic Score Pipeline",
+  "description": "A pipeline that generates an aesthetic score for a webpage.",
+  "inputs": {
+    "website_url": null
+  },
+  "outputs": {
+    "score": "compute_aesthetic_score.score"
+  },
+  "steps": [
+    {
+      "id": "fetch_screenshot",
+      "type": "fetch_screenshot",
+      "label": "Fetch Screenshot",
+      "inputs": {
+        "website_url": "inputs.website_url"
+      },
+      "config": {
+        "max_width": 1200,
+        "max_height": 1200
+      }
+    },
+    {
+      "id": "compute_aesthetic_score",
+      "type": "compute_aesthetic_score",
+      "inputs": {
+        "screenshot": "fetch_screenshot.screenshot"
+      }
+    }
+  ]
+}

@@ -236,35 +236,23 @@ class Pipeline(Job):
     def run_step(self, step_id: str, initial_params: Dict[str, Any] = None):
         step = self.step_instances[step_id]
 
-        print(f"Running step '{step_id}' with initial params: {initial_params}")
-
         input_data = initial_params if initial_params is not None else self.prepare_input_for_step(step)
-
-        print(f"Prepared input data for step '{step_id}': {input_data}")
 
         self.validate_inputs(step, input_data)
 
-        print(f"Validated inputs for step '{step_id}'")
-
         # Use the label for updates if available; otherwise, use the step name
         step_label = self.step_labels.get(step_id, step.get_name())
-        self.push_update(f"Running step '{step_label}'...")
 
         if inspect.iscoroutinefunction(step.process):
-            print(f"Running step '{step_id}' asynchronously...")
             result = asyncio.run(step.process(**input_data))
         else:
-            print(f"Running step '{step_id}' synchronously...")
             result = step.process(**input_data)
 
-        print(f"Step '{step_id}' completed execution.")
         self.push_update(f"Step '{step_label}' completed.")
         self.step_results[step_id] = result
 
     def validate_inputs(self, step: PipelineStep, input_data: Dict[str, Any]):
         step_type = step.get_type()
-        print(f"Validating inputs for step '{step.get_name()}' of type '{step_type}'")
-        print(f"Step definitions: {self.steps_definitions}")
 
         if isinstance(step, NestedPipelineStep):
             # If the step is a nested pipeline, retrieve the nested pipeline's definition
@@ -278,9 +266,7 @@ class Pipeline(Job):
             # For regular steps, get the required inputs from step definitions
             required_inputs = self.steps_definitions[step_type].get('inputs', [])
 
-        print(f"Required inputs for step '{step.get_name()}': {required_inputs}")
         missing_inputs = [input_name for input_name in required_inputs if input_name not in input_data]
-        print(f"Missing inputs for step '{step.get_name()}': {missing_inputs}")
 
         if missing_inputs:
             raise ValueError(f"Missing required inputs for step '{step.get_name()}': {', '.join(missing_inputs)}")
@@ -300,16 +286,10 @@ class Pipeline(Job):
         step_id = step.get_type()
         inputs = {}
 
-        print(f"Preparing inputs for step '{step_id}'")
-
         for input_name, source in step.inputs.items():
-            print(f"Processing input '{input_name}' for step '{step_id}' with source '{source}'")
             if source.startswith('inputs.'):
-                print(f"Global inputs: {self.global_inputs}")
                 global_input_key = source.split('.', 1)[1]
-                print(f"Global input key: {global_input_key}")
                 inputs[input_name] = self.global_inputs.get(global_input_key)
-                print(f"Input for step '{step_id}': {input_name} = {inputs[input_name]}")
             elif '.' in source:
                 dependency_id, field_name = source.split('.')
                 result = self.step_results.get(dependency_id)
