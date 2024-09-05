@@ -93,27 +93,32 @@ class PipelineEditor extends LitElement {
     render.addPreset(Presets.classic.setup({
       customize: {
         node(context) {
-          let nodeColor = '#ffffff'; // Default white color
+          let backgroundColor = '#ffffff'; // Default white color
+          let borderColor = '#000000'; // Default black border color
           
           // Use the type property to determine node color
           const nodeType = context.payload.type || 'processing'; // Default to 'processing' if type is not defined
           
           // Set colors based on node type
           if (nodeType === 'input') {
-            nodeColor = '#4caf50'; // Green for input nodes
+            backgroundColor = '#4caf50'; // Green for input nodes
+            borderColor = '#2e7d32'; // Dark green border
           } else if (nodeType === 'output') {
-            nodeColor = '#f44336'; // Red for output nodes
+            backgroundColor = '#f44336'; // Red for output nodes
+            borderColor = '#c62828'; // Dark red border
           } else if (nodeType === 'processing') {
-            nodeColor = '#2196f3'; // Blue for processing nodes
+            backgroundColor = '#2196f3'; // Blue for processing nodes
+            borderColor = '#1565c0'; // Dark blue border
           } else if (nodeType === 'pipeline') {
-            nodeColor = '#ff9800'; // Orange for pipeline nodes
+            backgroundColor = '#ff9800'; // Orange for pipeline nodes
+            borderColor = '#e65100'; // Dark orange border
           }
           
           // Return the custom node template
           return ({ emit }) => html`
-            <rete-node
+           <rete-node
               data-node-id="${context.payload.id}"
-              style="background-color: ${nodeColor}"
+              style="background-color: ${backgroundColor}; border-color: ${borderColor};"
               .data=${context.payload}
               .emit=${emit}>
                 <!-- Customize node appearance if needed -->
