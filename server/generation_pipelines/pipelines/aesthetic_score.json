@@ -3,7 +3,12 @@
   "name": "Aesthetic Score Pipeline",
   "description": "A pipeline that generates an aesthetic score for a webpage.",
   "inputs": {
-    "website_url": null
+    "website_url": {
+      "label": "Enter Website URL",
+      "description": "Enter the URL of the website you want to analyze",
+      "input_type": "string",
+      "required": true
+    }
   },
   "outputs": {
     "score": "compute_aesthetic_score.score"

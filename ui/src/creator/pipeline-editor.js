@@ -138,100 +138,104 @@ class PipelineEditor extends LitElement {
     AreaExtensions.simpleNodesOrder(this.area);
   }
   
-  async createPipeline() {
-    if (!this.editor) await this.initializeEditor();
-    const nodesMap = new Map();
-    
-    // Step 1: Add input nodes
-    for (const [inputName, inputValue] of Object.entries(this.pipelineData.inputs)) {
-      const inputNode = this.createInputNode(inputName, inputValue, this.socket);
-      nodesMap.set(`inputs.${inputName}`, inputNode);
-      await this.editor.addNode(inputNode);
-    }
-    
-    // Step 2: Add output nodes
-    for (const [outputName, outputValue] of Object.entries(this.pipelineData.outputs)) {
-      const outputNode = this.createOutputNode(outputName, outputValue, this.socket);
-      nodesMap.set(`outputs.${outputName}`, outputNode);
-      await this.editor.addNode(outputNode);
-    }
-    
-    // Step 3: Add pipeline step nodes
-    for (const step of this.pipelineData.steps) {
-      const stepDetails = this.stepsData.find(s => s.type === step.type || s.type === step?.config?.pipeline_id);
-      if (stepDetails) {
-        const node = this.createNode(step, stepDetails, this.socket);
-        nodesMap.set(step.id, node);
-        await this.editor.addNode(node);
-      }
-    }
-    
-    // Step 4: Create connections from input nodes to processing step nodes
-    for (const step of this.pipelineData.steps) {
-      const node = nodesMap.get(step.id);
-      
-      if (node) {
-        Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
-          let sourceNodeId, outputName;
-          
-          console.log('step:', step.type, 'input:', inputName, 'value:', inputValue);
-          
-          // Check if the input comes from the global inputs
-          if (inputValue.startsWith("inputs.")) {
-            sourceNodeId = inputValue; // Directly use inputValue as it already contains the global input node identifier
-            outputName = inputValue.split('.')[1]; // Extract the output name from the global input
-            console.log('Input1:', inputName, sourceNodeId, outputName);
-          } else {
-            // If not a global input, split as usual
-            [sourceNodeId, outputName] = inputValue.split('.');
-            console.log('Input2:', inputName, sourceNodeId, outputName);
-          }
-          
-          const sourceNode = nodesMap.get(sourceNodeId);
-          
-          if (sourceNode) {
-            const output = sourceNode.outputs[outputName];
-            const input = node.inputs[inputName];
-            
-            if (output && input) {
-              this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
-            } else {
-              console.warn(`Cannot find matching socket for input: ${inputName} or output: ${outputName}`);
-              console.log('Source Node:', sourceNode);
-              console.log('Target Node:', node);
-            }
-          } else {
-            console.warn(`Cannot find source node with ID: ${sourceNodeId}`);
-          }
-        });
-      }
-    }
-    
-    // Step 5: Create connections for output nodes
-    for (const [outputName, outputValue] of Object.entries(this.pipelineData.outputs)) {
-      const [sourceNodeId, outputPort] = outputValue.split('.');
-      console.log('Output:', outputName, sourceNodeId, outputPort);
-      const sourceNode = nodesMap.get(sourceNodeId);
-      const outputNode = nodesMap.get(`outputs.${outputName}`);
-      
-      console.log('Source Node:', sourceNode);
-      console.log('Output Node:', outputNode);
-      
-      if (sourceNode && outputNode) {
-        this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputPort, outputNode, outputName));
-      }
-    }
-    
-    // Step 6: Auto arrange and zoom
-    this.loading = true;
-    setTimeout(() => {
-      this.autoArrange();
-      setTimeout(() => {
-        this.autoZoom();
-        this.loading = false;
-      }, 1000);
-    }, 300);
+async createPipeline() {
+  if (!this.editor) await this.initializeEditor();
+  const nodesMap = new Map();
+
+  // Step 1: Add input nodes
+  for (const [inputName, inputValue] of Object.entries(this.pipelineData.inputs)) {
+    console.log('Input:', inputName, inputValue);
+    const inputNode = this.createInputNode(inputName, inputValue, this.socket);
+    nodesMap.set(`inputs.${inputName}`, inputNode);
+    await this.editor.addNode(inputNode);
   }
+
+  // Step 2: Add output nodes
+  for (const [outputName, outputValue] of Object.entries(this.pipelineData.outputs)) {
+    const outputNode = this.createOutputNode(outputName, outputValue, this.socket);
+    nodesMap.set(`outputs.${outputName}`, outputNode);
+    await this.editor.addNode(outputNode);
+  }
+
+  // Step 3: Add pipeline step nodes
+  for (const step of this.pipelineData.steps) {
+    const stepDetails = this.stepsData.find(s => s.type === step.type || s.type === step?.config?.pipeline_id);
+    if (stepDetails) {
+      const node = this.createNode(step, stepDetails, this.socket);
+      nodesMap.set(step.id, node);
+      await this.editor.addNode(node);
+    }
+  }
+
+  // Step 4: Create connections from input nodes to processing step nodes
+  for (const step of this.pipelineData.steps) {
+    const node = nodesMap.get(step.id);
+
+    if (node) {
+      Object.entries(step.inputs).forEach(([inputName, inputValue]) => {
+        let sourceNodeId, outputName;
+
+        console.log('step:', step.type, 'input:', inputName, 'value:', inputValue);
+
+        // Check if the input value is an object
+        if (typeof inputValue === 'object' && inputValue !== null) {
+          sourceNodeId = inputValue.sourceNodeId;
+          outputName = inputValue.outputName;
+        } else if (inputValue.startsWith("inputs.")) {
+          sourceNodeId = inputValue; // Directly use inputValue as it already contains the global input node identifier
+          outputName = inputValue.split('.')[1]; // Extract the output name from the global input
+          console.log('Input1:', inputName, sourceNodeId, outputName);
+        } else {
+          // If not a global input, split as usual
+          [sourceNodeId, outputName] = inputValue.split('.');
+          console.log('Input2:', inputName, sourceNodeId, outputName);
+        }
+
+        const sourceNode = nodesMap.get(sourceNodeId);
+
+        if (sourceNode) {
+          const output = sourceNode.outputs[outputName];
+          const input = node.inputs[inputName];
+
+          if (output && input) {
+            this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputName, node, inputName));
+          } else {
+            console.warn(`Cannot find matching socket for input: ${inputName} or output: ${outputName}`);
+            console.log('Source Node:', sourceNode);
+            console.log('Target Node:', node);
+          }
+        } else {
+          console.warn(`Cannot find source node with ID: ${sourceNodeId}`);
+        }
+      });
+    }
+  }
+
+  // Step 5: Create connections for output nodes
+  for (const [outputName, outputValue] of Object.entries(this.pipelineData.outputs)) {
+    const [sourceNodeId, outputPort] = outputValue.split('.');
+    console.log('Output:', outputName, sourceNodeId, outputPort);
+    const sourceNode = nodesMap.get(sourceNodeId);
+    const outputNode = nodesMap.get(`outputs.${outputName}`);
+
+    console.log('Source Node:', sourceNode);
+    console.log('Output Node:', outputNode);
+
+    if (sourceNode && outputNode) {
+      this.editor.addConnection(new ClassicPreset.Connection(sourceNode, outputPort, outputNode, outputName));
+    }
+  }
+
+  // Step 6: Auto arrange and zoom
+  this.loading = true;
+  setTimeout(() => {
+    this.autoArrange();
+    setTimeout(() => {
+      this.autoZoom();
+      this.loading = false;
+    }, 1000);
+  }, 300);
+}
   
   createInputNode(inputName, inputValue, socket) {
     const node = new ClassicPreset.Node(inputName);

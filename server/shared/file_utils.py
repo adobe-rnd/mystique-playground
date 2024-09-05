@@ -1,12 +1,7 @@
 import os
 
 
-def handle_file_upload(request_files, upload_folder):
-    if 'files' not in request_files:
-        raise Exception("No files part")
-
-    files = request_files.getlist('files')
-
+def handle_file_upload(files, upload_folder):
     if not files or files[0].filename == '':
         raise Exception("No selected file")
 

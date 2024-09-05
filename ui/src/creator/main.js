@@ -65,7 +65,7 @@ class MyFirstComponent extends LitElement {
       flex-direction: column;
       align-items: start;
       margin: 0 auto;
-      width: 60%;
+      width: 1024px;
       gap: 20px;
     }
     .header {
@@ -110,18 +110,6 @@ class MyFirstComponent extends LitElement {
       color: #0e70c0;
       font-size: 26px;
     }
-    .footer {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      background-color: #f0f0f0;
-      border-top: 1px solid #ccc
-    }
-    .footer sp-link {
-      font-size: 14px;
-      color: #666;
-    }
     .section-title {
       font-size: 22px;
       font-weight: bold;
@@ -132,13 +120,7 @@ class MyFirstComponent extends LitElement {
       color: #666;
       margin-top: -5px;
     }
-    .documents-container {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      width: 100%;
-    }
-    .documents-container .upload-container {
+    .upload-container {
       display: flex;
       flex-direction: row;
       gap: 5px;
@@ -293,7 +275,9 @@ class MyFirstComponent extends LitElement {
   @state() accessor files = [];
   @state() accessor intent = DEFAULT_INTENT;
   @state() accessor websiteUrl = '';
-
+  
+  @state() accessor pipelineInputs = [];
+  
   @state() accessor pipelines = [];
   @state() accessor selectedPipeline = '';
   
@@ -316,9 +300,6 @@ class MyFirstComponent extends LitElement {
   async fetchPipelines() {
     const response = await fetch('http://localhost:4003/pipelines');
     this.pipelines = await response.json();
-    if (this.pipelines.length > 0) {
-      this.selectedPipeline = this.pipelines[0].id;
-    }
   }
   
   async fetchGeneratedPages() {
@@ -333,22 +314,37 @@ class MyFirstComponent extends LitElement {
       });
   }
   
-  intentChanged(event) {
-    this.intent = event.target.value;
-  }
-  
-  handleFileChange(event) {
+  handleFileChange(event, key) {
     const newFiles = Array.from(event.target.files);
-    this.files = [...this.files, ...newFiles];
-    this.clearFileInput();
+    // Store the files in the pipelineInputs under the specified key
+    this.pipelineInputs = { ...this.pipelineInputs, [key]: (this.pipelineInputs[key] || []).concat(newFiles) };
+    this.clearFileInput(key);
   }
   
-  handleDrop(event) {
+  clearFileInput(key) {
+    const fileInput = this.shadowRoot.querySelector(`#file-input-${key}`);
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+  
+  removeFile(event, key, index) {
+    event.stopPropagation();
+    // Remove the file from pipelineInputs under the specified key
+    const updatedFiles = (this.pipelineInputs[key] || []).filter((_, i) => i !== index);
+    this.pipelineInputs = { ...this.pipelineInputs, [key]: updatedFiles };
+    this.clearFileInput(key);
+  }
+  
+  handleDrop(event, key) {
     event.preventDefault();
     event.stopPropagation();
+    
     const newFiles = Array.from(event.dataTransfer.files);
-    this.files = [...this.files, ...newFiles];
-    this.removeDragData(event);
+    // Store the files in the pipelineInputs under the specified key
+    this.pipelineInputs = { ...this.pipelineInputs, [key]: (this.pipelineInputs[key] || []).concat(newFiles) };
+    
+    this.removeDragData(event, key);
   }
   
   handleDragOver(event) {
@@ -363,29 +359,42 @@ class MyFirstComponent extends LitElement {
     event.target.classList.remove('dragover');
   }
   
-  removeDragData(event) {
+  removeDragData(event, key) {
     event.dataTransfer.clearData();
     event.target.classList.remove('dragover');
-  }
-  
-  removeFile(event, index) {
-    event.stopPropagation();
-    this.files = this.files.filter((_, i) => i !== index);
-    this.clearFileInput();
   }
   
   handlePipelineChange(event) {
     const selectedPipelineName = event.target.value;
     const selectedPipeline = this.pipelines.find(pipeline => pipeline.name === selectedPipelineName);
     this.selectedPipeline = selectedPipeline.id;
+    this.pipelineInputs = {};
+    this.setPipelineDefaults(selectedPipeline);
   }
   
-  handleUrlChange(event) {
-    this.websiteUrl = event.target.value;
+  setPipelineDefaults(pipeline) {
+    this.pipelineInputs = {};
+    Object.entries(pipeline.inputs).forEach(([key, input]) => {
+      if (input.default_value) {
+        this.pipelineInputs[key] = input.default_value;
+      }
+    });
   }
   
   isGenerateDisabled() {
-    return this.files.length === 0 || !this.websiteUrl || this.status === 'processing' || this.recipe === '';
+    const pipeline = this.getPipelineById(this.selectedPipeline);
+    
+    // Check if required inputs for the selected pipeline are filled
+    const hasAllRequiredInputs = pipeline && Object.entries(pipeline.inputs).every(([key, input]) => {
+      if (input.required) {
+        const value = this.pipelineInputs[key];
+        return value !== undefined && value !== null && value !== '' && (!Array.isArray(value) || value.length > 0);
+      }
+      return true;
+    });
+    
+    // Button is disabled if any required inputs are missing, status is processing, or there is no pipeline selected
+    return !hasAllRequiredInputs || this.status === 'processing' || !this.selectedPipeline;
   }
   
   getPipelineName() {
@@ -394,23 +403,33 @@ class MyFirstComponent extends LitElement {
     return pipeline ? pipeline.name : '';
   }
   
+  getPipelineById(pipelineId) {
+    return this.pipelines.find(pipeline => pipeline.id === pipelineId);
+  }
+  
   async generate() {
     this.jobId = null;
     this.status = null;
     this.messages = [];
-    
-    if (this.files.length === 0 && !this.websiteUrl) {
-      this.addMessage('No files or URL to process.');
+  
+    if (!this.selectedPipeline) {
+      this.addMessage('No pipeline selected.');
       return;
     }
-    
+  
     this.addMessage('Uploading data...');
     const formData = new FormData();
-    this.files.forEach(file => formData.append('files', file));
     formData.append('pipelineId', this.selectedPipeline);
-    formData.append('intent', this.intent);
-    formData.append('websiteUrl', this.websiteUrl);
-    
+  
+    // Append input values to formData
+    Object.entries(this.pipelineInputs).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((file) => formData.append(key, file));
+      } else {
+        formData.append(key, value);
+      }
+    });
+  
     try {
       const result = await wretch('http://localhost:4003/generate')
         .body(formData)
@@ -424,11 +443,6 @@ class MyFirstComponent extends LitElement {
       console.error('Error uploading data:', error);
       this.addMessage('Error uploading data.');
     }
-  }
-  
-  clearFileInput() {
-    const fileInput = this.shadowRoot.querySelector('input[type="file"]');
-    fileInput.value = '';
   }
   
   checkJobStatus(job_id) {
@@ -496,26 +510,61 @@ class MyFirstComponent extends LitElement {
       });
   }
   
-  renderNewPageGeneration() {
-    console.log('Selected pipeline:', this.selectedPipeline);
-    
-    return html`
-      <div class="tab-content ${this.activeTab === 'new-page' ? 'active' : ''}">
-        <div class="documents-container">
-          <div class="section-title">Step 1: Upload Your Documents</div>
-          <div class="section-description">Begin by uploading the documents you wish to use for generating a customized landing page.</div>
+  // Factory method to create input fields
+  createInputField(type, label, placeholder, required, value, key) {
+    switch (type) {
+      case 'string':
+        return html`
+          <sp-textfield
+            label="${label}"
+            placeholder="${placeholder}"
+            value="${value}"
+            @input="${(e) => this.handleInputChange(key, e)}"
+          ></sp-textfield>
+        `;
+      case 'text':
+        return html`
+          <sp-textfield
+            label="${label}"
+            placeholder="${placeholder}"
+            value="${value}"
+            multiline
+            rows="5"
+            @input="${(e) => this.handleInputChange(key, e)}"
+          ></sp-textfield>
+        `;
+      case 'number':
+        return html`
+          <sp-textfield
+            label="${label}"
+            placeholder="${placeholder}"
+            value="${value}"
+            type="number"
+            @input="${(e) => this.handleInputChange(key, e)}"
+          ></sp-textfield>
+        `;
+      case 'boolean':
+        return html`
+          <sp-checkbox
+            label="${label}"
+            ?checked="${value}"
+            @change="${(e) => this.handleInputChange(key, e)}"
+          ></sp-checkbox>
+        `;
+      case 'file':
+        return html`
           <div class="upload-container">
             <sp-dropzone
-                    id="dropzone-1"
-                    @dragover=${this.handleDragOver}
-                    @dragleave=${this.handleDragLeave}
-                    @drop=${this.handleDrop}
+                    label="${label}"
+                    @drop="${(e) => this.handleDrop(e, key)}"
+                    @dragover="${this.handleDragOver}"
+                    @dragleave="${this.handleDragLeave}"
             >
               <sp-illustrated-message heading="Drag and Drop Your Files">
                 <img src="${dropzoneIcon}" alt="Dropzone Icon" width="100">
               </sp-illustrated-message>
               <div>
-                <label for="file-input">
+                <label for="file-input-${key}">
                   <sp-link
                           href="javascript:;"
                           onclick="this.parentElement.nextElementSibling.click()"
@@ -524,35 +573,58 @@ class MyFirstComponent extends LitElement {
                   </sp-link>
                   from your computer
                 </label>
-                <input type="file" id="file-input" style="display: none" @change=${this.handleFileChange} multiple />
+                <input type="file" id="file-input-${key}" style="display: none" @change="${(e) => this.handleFileChange(e, key)}" multiple />
               </div>
             </sp-dropzone>
             <div class="file-list">
-              ${this.files.map((file, index) => html`
+              ${(this.pipelineInputs[key] || []).map((file, index) => html`
                 <div class="file-item">
                   ${file.name}
-                  <button @click=${(e) => this.removeFile(e, index)}>Remove</button>
+                  <button @click="${(e) => this.removeFile(e, key, index)}">Remove</button>
                 </div>
               `)}
             </div>
           </div>
-        </div>
+        `;
+      default:
+        return html``;
+    }
+  }
+
+  renderPipelineInputs() {
+    if (!this.selectedPipeline) {
+      return html``;
+    }
+    const pipeline = this.getPipelineById(this.selectedPipeline);
+    return html`
+      ${Object.entries(pipeline.inputs).map(([key, input]) => {
+        if (input !== null && typeof input === 'object') {
+          const { label, description, placeholder, input_type, required, default_value } = input;
+          return html`
+            <div class="inputs-container">
+              <div class="section-title">${label || key}</div>
+              <div class="section-description">${description || ''}</div>
+              ${this.createInputField(input_type, label || key, placeholder || '', required || false, this.pipelineInputs[key] || default_value || '', key)}
+            </div>
+          `;
+        } else {
+          return html`<!-- Unsupported input type -->`;
+        }
+      })}
+    `;
+  }
+  
+  handleInputChange(key, event) {
+    this.pipelineInputs = { ...this.pipelineInputs, [key]: event.target.value };
+  }
+
+  renderNewPageGeneration() {
+    console.log('Selected pipeline:', this.selectedPipeline);
+    
+    return html`
+      <div class="tab-content ${this.activeTab === 'new-page' ? 'active' : ''}">
         <div class="inputs-container">
-          <div class="section-title">Step 2: Describe Your Intent</div>
-          <div class="section-description">Describe the purpose and goals of your new webpage to help guide the design and content generation process.</div>
-          <sp-textfield multiline rows=5 placeholder="Enter your intent" .value=${this.intent} @input="${this.intentChanged}">
-            <sp-field-label slot="label">Intent</sp-field-label>
-          </sp-textfield>
-        </div>
-        <div class="inputs-container">
-          <div class="section-title">Step 3: Provide a Reference Website URL to Copy the Design</div>
-          <div class="section-description">Enter the URL of a website that you would like to emulate. We will use this site as a design reference to create a visually similar landing page.</div>
-          <sp-textfield placeholder="Enter website URL" .value=${this.websiteUrl} @input="${this.handleUrlChange}">
-            <sp-field-label slot="label">Website URL</sp-field-label>
-          </sp-textfield>
-        </div>
-        <div class="inputs-container">
-          <div class="section-title">Step 4: Choose the Cooking Recipe</div>
+          <div class="section-title">Choose the Cooking Recipe</div>
           <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
           <sp-combobox placeholder="Select a recipe" .value=${this.getPipelineName()} @change="${this.handlePipelineChange}">
             ${this.pipelines.map((pipeline) => html`
@@ -560,6 +632,7 @@ class MyFirstComponent extends LitElement {
             `)}
           </sp-combobox>
         </div>
+        ${this.renderPipelineInputs()}
         <div class="results-container ${this.status === null ? 'hidden-element' : ''}">
           <div class="section-title">Relax and Wait for the Magic to Happen</div>
           <div class="section-description">Monitor the progress of your job and preview the generated markup for your new landing page.</div>
@@ -575,7 +648,7 @@ class MyFirstComponent extends LitElement {
           </div>
         </div>
         <div class="buttons-container">
-          <sp-button variant="primary" size="L" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Generate</sp-button>
+          <sp-button variant="primary" size="L" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Cook</sp-button>
         </div>
       </div>
     `;
@@ -627,22 +700,19 @@ class MyFirstComponent extends LitElement {
         <div class="main-container">
           <div class="header">
             <img src="${logo}" alt="Logo" height="200">
-            <div class="title">Mystique <strong>Web Creator</strong></div>
-            <div class="subtitle">Instantly convert <strong>your ideas</strong> into fully-fledged <strong>web pages</strong></div>
+            <div class="title">Mystique's <strong>Magic Kitchen</strong></div>
+            <div class="subtitle">Cooking up <strong>beautiful web pages</strong> with a sprinkle of magic</div>
           </div>
           <div class="tabs-container">
             <sp-tabs selected="${this.activeTab}">
               <sp-tab label="Generate" value="new-page" @click="${() => this.setActiveTab('new-page')}"></sp-tab>
               <sp-tab label="Generated Pages" value="history" @click="${() => this.setActiveTab('history')}"></sp-tab>
-              <sp-tab label="Pipelines" value="pipeline-editor" @click="${() => this.setActiveTab('pipeline-editor')}"></sp-tab>
+              <sp-tab label="Recipies" value="pipeline-editor" @click="${() => this.setActiveTab('pipeline-editor')}"></sp-tab>
             </sp-tabs>
           </div>
           ${this.renderNewPageGeneration()}
           ${this.renderHistoryTab()}
           ${this.renderPipelinesTab()}
-        </div>
-        <div class="footer">
-          <sp-link href="https://www.adobe.com" target="_blank">Powered by Adobe</sp-link>
         </div>
       </sp-theme>
     `;

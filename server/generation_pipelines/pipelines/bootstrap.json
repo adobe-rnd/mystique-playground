@@ -3,8 +3,20 @@
   "name": "Bootstrap Pipeline",
   "description": "This pipeline is used to generate a page using the Bootstrap framework.",
   "inputs": {
-    "uploaded_files": null,
-    "website_url": null
+    "uploaded_files": {
+        "label": "Choose Files",
+        "description": "Upload documents, images, and other files that you want to include in the page",
+        "placeholder": "Upload files",
+        "input_type": "file",
+        "required": true
+    },
+    "website_url": {
+        "label": "Enter Website URL",
+        "description": "Enter the URL of the website you want to copy the design from",
+        "placeholder": "Enter website URL",
+        "input_type": "string",
+        "required": true
+    }
   },
   "outputs": {
     "url": "create_page_from_html.url"

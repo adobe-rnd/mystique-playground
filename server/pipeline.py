@@ -24,6 +24,7 @@ class Pipeline(Job):
         self.step_results: Dict[str, Any] = {}
         self.pipeline_context = pipeline_context or {}
         self.global_inputs: Dict[str, Any] = {}
+        self.global_input_defaults: Dict[str, Any] = {}
         self.initial_params = initial_params
         self.properties: Dict[str, Any] = {}
         self.output_mapping: Dict[str, str] = {}
@@ -60,10 +61,13 @@ class Pipeline(Job):
                             print(f"Failed to parse JSON in {file_path}")
 
     def create_pipeline_from_json(self, config: Dict[str, Any]):
-        self.global_inputs = {
-            input_name: input_value if input_value is not None else None
-            for input_name, input_value in config.get("inputs", {}).items()
-        }
+        for input_name, input_value in config.get("inputs", {}).items():
+            if isinstance(input_value, dict):
+                self.global_inputs[input_name] = None
+                self.global_input_defaults[input_name] = input_value.get("default_value")
+            else:
+                self.global_inputs[input_name] = input_value
+
         self.output_mapping = config.get("outputs", {})
 
         # Extract step IDs from the configuration
@@ -85,14 +89,7 @@ class Pipeline(Job):
             if step_type in self.steps_definitions or step_type == "pipeline":
                 if step_type == "pipeline":
                     pipeline_id = step_instance_config.get("pipeline_id")
-                    # Use the metadata to resolve inputs
                     print(f"Creating nested pipeline step with definition: {pipeline_id}")
-                    # nested_pipeline_inputs = {
-                    #     input_key: self.global_inputs.get(input_value.split('.', 1)[1], None)
-                    #     if input_value.startswith('inputs.') else self.step_results.get(input_value.split('.')[0], {}).get(input_value.split('.')[1], None)
-                    #     for input_key, input_value in inputs.items()
-                    # }
-                    # print(f"Resolved inputs for nested pipeline: {nested_pipeline_inputs}")
                     step_instance = NestedPipelineStep(
                         pipeline=self,
                         definition=self.pipeline_definitions.get(pipeline_id)
@@ -169,10 +166,12 @@ class Pipeline(Job):
 
         print("Running pipeline...")
 
-        # Initialize global inputs
-        for key, value in self.initial_params.items():
-            if key in self.global_inputs:
-                self.global_inputs[key] = value
+        # Initialize global inputs and use default values if necessary
+        for key in self.global_inputs.keys():
+            if key in self.initial_params:
+                self.global_inputs[key] = self.initial_params[key]
+            elif self.global_inputs[key] is None:
+                self.global_inputs[key] = self.global_input_defaults.get(key)
 
         # Dictionary to track completed steps
         completed_steps = set()
@@ -233,12 +232,47 @@ class Pipeline(Job):
             if step_id in deps
         ]
 
+    def convert_params_to_types(self, step: PipelineStep, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert input parameters to the appropriate types required by the step's process method.
+        """
+        converted_data = {}
+        step_process_signature = inspect.signature(step.process)
+
+        for param_name, param in step_process_signature.parameters.items():
+            if param_name in input_data:
+                param_value = input_data[param_name]
+                param_type = param.annotation if param.annotation != inspect.Parameter.empty else type(param.default)
+                print(f"Converting parameter '{param_name}' to type {param_type}")
+
+                # Handle special cases for generic types like List, Dict, etc.
+                try:
+                    if param_type == list:
+                        converted_data[param_name] = list(param_value)
+                    elif param_type == dict:
+                        converted_data[param_name] = dict(param_value)
+                    elif hasattr(param_type, "__origin__") and param_type.__origin__ in [list, dict, tuple, set]:
+                        # For typing.List, typing.Dict, etc., use the origin
+                        converted_data[param_name] = param_type.__origin__(param_value)
+                    else:
+                        # Attempt to convert to the specified type
+                        converted_data[param_name] = param_type(param_value)
+                except (ValueError, TypeError) as e:
+                    raise ValueError(f"Failed to convert parameter '{param_name}' to {param_type}: {e}")
+            else:
+                converted_data[param_name] = param.default
+
+        return converted_data
+
     def run_step(self, step_id: str, initial_params: Dict[str, Any] = None):
         step = self.step_instances[step_id]
 
         input_data = initial_params if initial_params is not None else self.prepare_input_for_step(step)
 
         self.validate_inputs(step, input_data)
+
+        # Convert input parameters to the appropriate types
+        input_data = self.convert_params_to_types(step, input_data)
 
         # Use the label for updates if available; otherwise, use the step name
         step_label = self.step_labels.get(step_id, step.get_name())
@@ -289,15 +323,25 @@ class Pipeline(Job):
         for input_name, source in step.inputs.items():
             if source.startswith('inputs.'):
                 global_input_key = source.split('.', 1)[1]
-                inputs[input_name] = self.global_inputs.get(global_input_key)
+                if global_input_key in self.global_inputs:
+                    inputs[input_name] = self.global_inputs[global_input_key]
+                else:
+                    raise ValueError(f"Global input '{global_input_key}' not found for step '{step_id}'")
             elif '.' in source:
                 dependency_id, field_name = source.split('.')
                 result = self.step_results.get(dependency_id)
 
+                if result is None:
+                    raise ValueError(f"Result for step '{dependency_id}' not found when preparing input for step '{step_id}'")
+
                 if isinstance(result, dict):
-                    inputs[input_name] = result.get(field_name)
+                    if field_name not in result:
+                        raise ValueError(f"Field '{field_name}' not found in result of step '{dependency_id}' when preparing input for step '{step_id}'")
+                    inputs[input_name] = result[field_name]
                 else:
-                    inputs[input_name] = getattr(result, field_name, None)
+                    if not hasattr(result, field_name):
+                        raise ValueError(f"Attribute '{field_name}' not found in result of step '{dependency_id}' when preparing input for step '{step_id}'")
+                    inputs[input_name] = getattr(result, field_name)
             else:
                 raise ValueError(f"Invalid input source '{source}' for step '{step_id}' - must contain a dot")
 

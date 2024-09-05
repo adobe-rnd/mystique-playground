@@ -4,8 +4,16 @@
   "description": "A pipeline that performs a series of arithmetic operations (addition, subtraction, multiplication, division) on two input numbers.",
   "properties": {},
   "inputs": {
-    "a": 10,
-    "b": 5
+    "a": {
+      "label": "Enter Argument A",
+      "input_type": "number",
+      "default_value": 10
+    },
+    "b": {
+      "label": "Enter Argument B",
+      "input_type": "number",
+      "default_value": 5
+    }
   },
   "outputs": {
     "addition_result": "addition_step.result",

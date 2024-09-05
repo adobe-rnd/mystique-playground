@@ -105,15 +105,31 @@ class WebCreator:
 
     def generate(self):
         try:
+            # Extract pipeline ID
             pipeline_id = request.form.get("pipelineId")
-            user_intent = request.form.get("intent")
-            website_url = request.form.get("websiteUrl")
-            file_paths = handle_file_upload(request.files, UPLOAD_FOLDER)
             print(f"Pipeline ID: {pipeline_id}")
-            print(f"Uploaded files: {file_paths}")
-            print(f"User intent: {user_intent}")
-            print(f"Website URL: {website_url}")
 
+            # print all parameters
+            print(f"Request form: {request.form}")
+            print(f"Request files: {request.files}")
+
+            # Extract all other dynamic parameters
+            dynamic_params = {}
+            for key in request.form.keys():
+                if key not in ['pipelineId']:
+                    dynamic_params[key] = request.form.get(key)
+
+            # first check if there are any files in the request
+            for key in request.files:
+                # handle file upload
+                files = handle_file_upload(request.files.getlist(key), UPLOAD_FOLDER)
+                # add the file paths to the dynamic params
+                dynamic_params[key] = files
+
+            print(f"Pipeline ID: {pipeline_id}")
+            print(f"Dynamic Params: {dynamic_params}")
+
+            # Create a job ID
             job_id = self.job_manager.generate_job_id()
             print(f"Job ID: {job_id}")
 
@@ -122,13 +138,8 @@ class WebCreator:
             os.makedirs(job_folder, exist_ok=True)
             print(f"Job folder created: {job_folder}")
 
-            params={
-                "uploaded_files": file_paths,
-                "user_intent": user_intent,
-                "website_url": website_url
-            }
-
-            job = self.create_pipeline(pipeline_id, job_id, job_folder, params)
+            # Create pipeline with the dynamic parameters
+            job = self.create_pipeline(pipeline_id, job_id, job_folder, dynamic_params)
 
             print(f"Adding job to manager: {job}")
 

@@ -3,9 +3,27 @@
   "name": "Data Model Pipeline",
   "description": "This pipeline is used to generate a page using a data model.",
   "inputs": {
-    "uploaded_files": null,
-    "user_intent": null,
-    "website_url": null
+    "uploaded_files": {
+      "label": "Choose Files",
+      "description": "Upload documents, images, and other files that you want to include in the page",
+      "placeholder": "Upload files",
+      "input_type": "file",
+      "required": true
+    },
+    "user_intent": {
+      "label": "Define Your Intent",
+      "description": "Describe your intent for the page",
+      "placeholder": "Describe your intent",
+      "input_type": "text",
+      "required": true
+    },
+    "website_url": {
+      "label": "Enter Website URL",
+      "description": "Enter the URL of the website you want to copy the design from",
+      "placeholder": "Enter website URL",
+      "input_type": "string",
+      "required": true
+    }
   },
   "outputs": {
     "url": "create_page_from_data_model.url"
