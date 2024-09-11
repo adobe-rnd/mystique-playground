@@ -624,9 +624,9 @@ class MyFirstComponent extends LitElement {
     return html`
       <div class="tab-content ${this.activeTab === 'new-page' ? 'active' : ''}">
         <div class="inputs-container">
-          <div class="section-title">Choose the Cooking Recipe</div>
-          <div class="section-description">Select the recipe that best suits your needs. Each recipe will generate a different layout and content structure for your landing page.</div>
-          <sp-combobox placeholder="Select a recipe" .value=${this.getPipelineName()} @change="${this.handlePipelineChange}">
+          <div class="section-title">Choose the Generative Pipeline</div>
+          <div class="section-description">Select a pipeline to generate a new web page.</div>
+          <sp-combobox placeholder="Select a pipeline" .value=${this.getPipelineName()} @change="${this.handlePipelineChange}">
             ${this.pipelines.map((pipeline) => html`
               <sp-menu-item value="${pipeline.id}">${pipeline.name}</sp-menu-item>
             `)}
@@ -648,7 +648,7 @@ class MyFirstComponent extends LitElement {
           </div>
         </div>
         <div class="buttons-container">
-          <sp-button variant="primary" size="L" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Cook</sp-button>
+          <sp-button variant="primary" size="L" @click="${this.generate}" ?disabled="${this.isGenerateDisabled()}">Generate</sp-button>
         </div>
       </div>
     `;
@@ -700,14 +700,14 @@ class MyFirstComponent extends LitElement {
         <div class="main-container">
           <div class="header">
             <img src="${logo}" alt="Logo" height="200">
-            <div class="title">Mystique's <strong>Magic Kitchen</strong></div>
-            <div class="subtitle">Cooking up <strong>beautiful web pages</strong> with a sprinkle of magic</div>
+            <div class="title">Mystique <strong>Web Creator</strong></div>
+            <div class="subtitle">Instantly convert <strong>your ideas</strong> into fully-fledged <strong>web pages</strong></div>
           </div>
           <div class="tabs-container">
             <sp-tabs selected="${this.activeTab}">
               <sp-tab label="Generate" value="new-page" @click="${() => this.setActiveTab('new-page')}"></sp-tab>
               <sp-tab label="Generated Pages" value="history" @click="${() => this.setActiveTab('history')}"></sp-tab>
-              <sp-tab label="Recipies" value="pipeline-editor" @click="${() => this.setActiveTab('pipeline-editor')}"></sp-tab>
+              <sp-tab label="Pipelines" value="pipeline-editor" @click="${() => this.setActiveTab('pipeline-editor')}"></sp-tab>
             </sp-tabs>
           </div>
           ${this.renderNewPageGeneration()}
